@@ -1,0 +1,153 @@
+{
+  "skill_name": "baseten",
+  "evals": [
+    {
+      "id": 0,
+      "name": "deploy-llama-finetune",
+      "prompt": "I need to deploy my fine-tune of Llama-3.1-8B-Instruct on Baseten. The fine-tune is on Hugging Face at acme/llama-3.1-8b-ft (private repo, I have access via the HF_ACCESS_TOKEN secret in my Baseten workspace). I want it on an L4 GPU with 4 vCPU and 16Gi memory. Generate the files I need (config.yaml and any model code) and tell me how to deploy it.",
+      "expected_output": "A working Truss directory: a config.yaml referencing the L4, declaring the hf_access_token secret by name (not value), pinning python_version, and either a model.py loading the model from HF or a custom_server / engine config that does the same. Deploy command should mention truss push (with appropriate flags).",
+      "files": [],
+      "assertions": [
+        {
+          "text": "A config.yaml file is produced",
+          "check": "file_exists"
+        },
+        {
+          "text": "config.yaml selects an L4 GPU (accelerator: L4 or instance_type starts with L4:)"
+        },
+        {
+          "text": "config.yaml requests 4 vCPU and 16Gi memory (or instance_type L4:4x16)"
+        },
+        {
+          "text": "config.yaml declares the hf_access_token secret by name without a real token value"
+        },
+        {
+          "text": "No real Hugging Face token (hf_...) appears in any output file"
+        },
+        {
+          "text": "Output includes either a model.py with load/predict, a docker_server block, or an engine block (not all three)"
+        },
+        {
+          "text": "config.yaml sets python_version (e.g. py311)"
+        },
+        {
+          "text": "Recommended deploy command is some form of `truss push`"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "deploy-vllm-server",
+      "prompt": "Deploy mistralai/Mistral-7B-Instruct-v0.3 on Baseten using vLLM as the inference server. I do not want to write any Python model code. Give me the config.yaml and tell me how to push it.",
+      "expected_output": "A custom-server config.yaml with a docker_server block (start_command launching vLLM, OpenAI-compatible endpoints), no model.py, server_port not 8080, base_image set to a vLLM image, resources with a GPU appropriate for Mistral 7B.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "A config.yaml is produced and no model.py is written"
+        },
+        {
+          "text": "config.yaml contains a docker_server block"
+        },
+        {
+          "text": "docker_server.server_port is not 8080"
+        },
+        {
+          "text": "docker_server has predict_endpoint, readiness_endpoint, and liveness_endpoint set"
+        },
+        {
+          "text": "base_image points at a vLLM-capable image (e.g. vllm/vllm-openai)"
+        },
+        {
+          "text": "start_command launches vLLM serving Mistral-7B-Instruct-v0.3"
+        },
+        {
+          "text": "resources block includes a GPU appropriate for a 7B model (L4/A10G/A100 or larger)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "call-deployed-model-streaming",
+      "prompt": "Write me a Python script that calls my deployed Baseten model and streams the response token by token. The model id is abc12345 and it is deployed in production. It is OpenAI-compatible (vLLM). Use the OpenAI SDK if appropriate.",
+      "expected_output": "Python that uses the OpenAI SDK with base_url pointed at https://model-abc12345.api.baseten.co/environments/production/sync/v1 (or equivalent sync path), api_key from BASETEN_API_KEY env var, stream=True in the chat.completions.create call, and a loop printing chunk.choices[0].delta.content.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "A Python script is produced (.py file)"
+        },
+        {
+          "text": "Script imports the openai package"
+        },
+        {
+          "text": "OpenAI client base_url contains model-abc12345.api.baseten.co"
+        },
+        {
+          "text": "Base URL uses the /sync/v1 path (or equivalent OpenAI-compat sync route)"
+        },
+        {
+          "text": "api_key is sourced from the BASETEN_API_KEY environment variable, not hardcoded"
+        },
+        {
+          "text": "chat.completions.create is called with stream=True"
+        },
+        {
+          "text": "Script iterates streamed chunks and prints chunk.choices[0].delta.content (or equivalent)"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "promote-deployment-to-staging",
+      "prompt": "I want to script the following with curl: list all deployments for model id abc12345, find the most recent development deployment, then promote it to a new environment called 'staging'. Show me the exact requests.",
+      "expected_output": "Bash/curl commands hitting the Baseten management API at https://api.baseten.co/v1/... with Authorization: Api-Key $BASETEN_API_KEY header. Should reference /v1/models/{id}/deployments to list, /v1/models/{id}/environments POST to create staging, and /v1/models/{id}/environments/staging/promote to promote.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Output uses HTTP requests to https://api.baseten.co/v1/..."
+        },
+        {
+          "text": "Authorization header uses the `Api-Key` prefix, not `Bearer`"
+        },
+        {
+          "text": "Lists deployments via GET /v1/models/abc12345/deployments"
+        },
+        {
+          "text": "Creates the staging environment via POST /v1/models/abc12345/environments"
+        },
+        {
+          "text": "Promotes via POST /v1/models/abc12345/environments/staging/promote"
+        },
+        {
+          "text": "API key is read from an env var (e.g. $BASETEN_API_KEY), not hardcoded"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "long-running-async-inference",
+      "prompt": "I want to run a 20-minute generation against my deployed Baseten model (id abc12345, production). I do not want to keep an HTTP connection open for that long. What is the right way to do this on Baseten? Show me code.",
+      "expected_output": "Should use async_predict at https://model-abc12345.api.baseten.co/environments/production/async_predict, include a webhook_endpoint URL, return a request_id, and either show a webhook receiver or poll /async_request/{request_id}. Should not attempt streaming (which is incompatible with async).",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Recommends the async_predict pattern (not sync /predict)"
+        },
+        {
+          "text": "URL contains /async_predict"
+        },
+        {
+          "text": "Request payload includes a webhook_endpoint field"
+        },
+        {
+          "text": "Auth uses the `Api-Key` prefix, not `Bearer`"
+        },
+        {
+          "text": "Notes that Baseten does not store outputs (so webhook receiver must persist) OR mentions polling /async_request/{id}"
+        },
+        {
+          "text": "Does not attempt to combine async with streaming"
+        }
+      ]
+    }
+  ]
+}
