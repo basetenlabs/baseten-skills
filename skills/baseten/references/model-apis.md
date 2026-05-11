@@ -123,4 +123,4 @@ Standard HTTP:
 - Tool calling: <https://docs.baseten.co/inference/function-calling>
 - Reasoning: <https://docs.baseten.co/inference/model-apis/reasoning>
 - Rate limits and budgets: <https://docs.baseten.co/inference/model-apis/rate-limits-and-budgets>
-- Custom deployments (when a managed model is not a fit): `inference-api.md` in this skill.
+- Custom deployments (when a managed model is not a fit): `inference-api.md`.

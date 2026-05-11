@@ -109,7 +109,7 @@ Path-based environment selection (`/environments/{name}/predict`, `/production/p
 - **Deactivating**: suspends serving while preserving config. No compute cost; inference returns 404. Reactivate anytime.
 - **Deleting**: permanent. Production deployments must be replaced before deletion.
 
-Programmatic equivalents live in `management-api.md` in this skill.
+Programmatic equivalents live in `management-api.md`.
 
 ## CI/CD
 
@@ -144,4 +144,4 @@ Broader observability (metrics export, alerting, tracing): <https://docs.baseten
 - Autoscaling: <https://docs.baseten.co/deployment/autoscaling/overview>
 - Regional environments: <https://docs.baseten.co/deployment/regional-environments>
 - CI/CD: <https://docs.baseten.co/deployment/ci-cd>
-- Programmatic control: `management-api.md` in this skill.
+- Programmatic control: `management-api.md`.

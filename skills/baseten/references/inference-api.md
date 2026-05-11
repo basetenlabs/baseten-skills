@@ -189,4 +189,4 @@ If a deployment is scaled to zero, `POST {target}/wake` triggers a warm-up witho
 - Streaming: <https://docs.baseten.co/inference/streaming>
 - Async and webhooks: <https://docs.baseten.co/inference/async>
 - OpenAPI spec: <https://api.baseten.co/inference-spec>
-- Pre-hosted Model APIs: `model-apis.md` in this skill.
+- Pre-hosted Model APIs: `model-apis.md`.

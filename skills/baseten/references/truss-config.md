@@ -2,11 +2,15 @@
 
 `config.yaml` sits at the root of a Truss directory and describes how a model is built and served: its name, runtime, hardware, packages, secrets, and (for non-Python flavors) the Docker or engine configuration that stands in for `model.py`.
 
-A `config.yaml` on its own does not produce a working deployment. It must be paired with one of:
+## Authoring flavor — pick before writing config
 
-- a Python `model.py` (the Python-class flavor, see `truss-model-py.md`), or
-- a `docker_server` block pointing at a custom HTTP server (see `truss-custom-servers.md`), or
-- an engine block such as `trt_llm` for an engine-only deploy (see the engine-only section below).
+A `config.yaml` does not produce a working deployment on its own; it must be paired with one of three authoring flavors. Pick by the model, not by habit — `model.py` is the worst default for modern LLMs.
+
+| Flavor | When to pick | Reference |
+|---|---|---|
+| **Python class** (`model.py` with `load` / `predict`) | Custom pre/post-processing, custom architecture, Python in the request path. | `truss-model-py.md` |
+| **Custom Docker server** (`docker_server` block — vLLM, TGI, SGLang, Triton, Ollama, NIM) | An off-the-shelf inference server already does it. Most common path for modern LLMs. | `truss-custom-servers.md` |
+| **Engine-only** (no code; `trt_llm` / BEI / BIS-LLM block in this file) | Standard architecture covered by a Baseten engine. Fastest path; no Python or Docker to maintain. | engines section below |
 
 The authoritative schema is the Pydantic-backed JSON schema in the Truss repo:
 

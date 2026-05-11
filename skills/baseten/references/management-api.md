@@ -149,5 +149,5 @@ For anything non-trivial, generate a client from <https://api.baseten.co/v1/spec
 
 - Endpoint overview: <https://docs.baseten.co/reference/management-api/overview>
 - OpenAPI spec: <https://api.baseten.co/v1/spec>
-- Deployment lifecycle concepts: `deployment-lifecycle.md` in this skill.
-- CLI (wraps many of these endpoints): `truss-cli.md` in this skill.
+- Deployment lifecycle concepts: `deployment-lifecycle.md`.
+- CLI (wraps many of these endpoints): `truss-cli.md`.

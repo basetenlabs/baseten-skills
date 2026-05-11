@@ -2,11 +2,11 @@
 
 The `truss` CLI builds, deploys, and live-patches Trusses. The published reference is at <https://docs.baseten.co/reference/cli/truss/overview>.
 
-This file covers Truss model commands only. For the `truss chains` subcommand group, see `truss-chains.md` in this skill. The `truss train` group (Truss Train) is not covered in this skill; see <https://docs.baseten.co/reference/cli/training>.
+This file covers Truss model commands only. For the `truss chains` subcommand group, see `truss-chains.md`. The `truss train` group (Truss Train) is not covered here; see <https://docs.baseten.co/reference/cli/training>.
 
 ## Install
 
-See the "Installing the truss CLI" section of SKILL.md. Short version: `uv tool install truss` (or `uvx truss <command>` to run without installing); `pip install truss` also works.
+`uv tool install truss` (or `uvx truss <command>` to run without installing); `pip install truss` also works. Respect the user's preferred package manager.
 
 ## Authenticate
 
@@ -142,4 +142,4 @@ Workspace and account utilities. `whoami` prints the current authenticated user.
 - `truss push` reference: <https://docs.baseten.co/reference/cli/truss/push>
 - `truss watch` reference: <https://docs.baseten.co/reference/cli/truss/watch>
 - Deploy and iterate guide: <https://docs.baseten.co/development/model/deploy-and-iterate>
-- Calling deployed models (when ready to test from outside the CLI): see `inference-api.md` in this skill.
+- Calling deployed models (when ready to test from outside the CLI): see `inference-api.md`.

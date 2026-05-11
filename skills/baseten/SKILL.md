@@ -1,142 +1,66 @@
 ---
 name: baseten
-description: Use this skill for anything involving Baseten or Truss, such as deploying a custom model, writing or debugging a `config.yaml`, choosing between a Python `model.py`, a custom Docker server (vLLM/TGI/SGLang/Triton), or an engine-only deploy (TensorRT-LLM, BEI, BIS-LLM), running `truss push` or `truss watch`, working with Chains, managing environments and rolling deployments, calling pre-hosted Baseten Model APIs, or calling custom deployments via the inference API or managing them via the management API.
+description: Skill for anything Baseten — deploying/operating models on Dedicated Inference (Truss, custom Docker servers, TRT LLM engines, Chains), calling pre-hosted Model APIs, running Training jobs (SFT/RL/LoRA), or Model Frontier Gateway.
 ---
 
 # Baseten
 
-Baseten is a platform for serving machine learning models. Two broad paths exist:
+Production AI inference platform — serve and scale open-source, custom, and fine-tuned models with the fastest runtimes, cross-cloud HA, and seamless developer workflows.
 
-- **Model APIs** - pre-hosted, ready-to-call models (chat, embeddings, etc.) accessed over HTTP. No deployment step. Good when a hosted model already does what the user needs.
-- **Custom deployments via Truss** - package and deploy a user-supplied model. A Truss is a directory containing a `config.yaml` plus optionally model code, a custom server image, or an engine config. Built and deployed with the `truss` CLI; operated via the management API; called via the inference API.
+## Products
 
-This skill is the entry point for any Baseten work. Read this body fully, then load only the references relevant to the task.
+- **Dedicated Inference** — deploy any model, performance-optimized + horizontally scaled. Authored as auto-wrapped Truss server, custom Docker server, or compound/orchestrated deployment via Chains.
+- **Model APIs** — pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
+- **Training** — managed training + fine-tuning (SFT, RL, LoRA). Multi-node, 1T+ params, 10TB+ datasets, 256k seq lengths on H100/H200/B200. BYO scripts or recipes. W&B / HF / S3.
+- **Frontier Gateway** — operate your own foundation model B2C.
 
-## Mental model for custom deployments
+## Agent DX Toolkit
 
-A deployed Truss has three pieces a user works with:
-
-1. **The Truss** (source): a directory you author.
-2. **The deployment** (running): a containerized instance attached to an environment such as `development` or `production`.
-3. **The endpoint** (call site): the URL clients hit, e.g. `https://model-{id}.api.baseten.co/environments/production/predict`.
-
-Almost every custom-deployment task touches one or more.
-
-## Three ways to author a Truss
-
-Pick the simplest one that fits.
-
-| Flavor | When to pick | Reference |
+| Component | Provides | Install |
 |---|---|---|
-| **Python class** (`model.py` with `load`/`predict`) | Custom pre/post-processing, custom architectures, anything needing Python in the request path. | `references/truss-model-py.md` |
-| **Custom server** (`docker_server` block, BYO HTTP server such as vLLM, TGI, SGLang, Triton) | An existing inference server already does the job. Often the most popular path for modern LLMs. | `references/truss-custom-servers.md` |
-| **Engine-only** (no code; engine config in `config.yaml`, e.g. TensorRT-LLM, BEI, BIS-LLM) | Standard architecture covered by a Baseten-supported engine. Fastest path; no Python or Docker to maintain. | `references/truss-config.md` (engines section) |
+| `baseten` MCP | Backend (≈REST API): models, deployments, training, environments, secrets, chains. API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_API_KEY}"` |
+| `baseten_docs` MCP | Semantic search of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
+| `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login`. | `pip install truss --upgrade` (respect user package manager: uv, poetry...) |
+| `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). HTTP, no auth. | reachable via HTTP |
+| This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx add-skill basetenlabs/baseten-skills -g -y` |
 
-If unsure which flavor fits, ask. Don't default to Python class out of habit; custom servers and engines are often better choices.
+API key from `app.baseten.co/settings/api_keys` (ask the user to create key).
 
-## Decision routing
+### Setup
 
-Match the task to the reference(s) to load. **Only load what you need.**
+- Any subset works, but with varying features.
+- Suggest additional installs when the current task benefits from them; help user run command, but elicit 
+  preferences first.
+- CLI via `truss --version`; prior login (multi-workspace users will need `--remote <name>`).
+- Docs MCP missing → grep / fetch `llms.txt`.
+- Backend MCP is API-key-only (currently) — OAuth-only harnesses can still use the other components.
 
-| Task | Load |
-|---|---|
-| Calling a pre-hosted Model API | `references/model-apis.md` |
-| Writing or editing `config.yaml` | `references/truss-config.md` |
-| Writing the Python `Model` class | `references/truss-model-py.md` |
-| Configuring a custom Docker server | `references/truss-custom-servers.md` |
-| Running `truss push`, `truss watch`, `truss init` | `references/truss-cli.md` |
-| Building a multi-step inference pipeline | `references/truss-chains.md` |
-| Understanding environments, promotion, rolling deploys, autoscaling | `references/deployment-lifecycle.md` |
-| Listing/promoting/deleting deployments programmatically | `references/management-api.md` |
-| Calling a custom-deployed model (sync, streaming, async, OpenAI-compat) | `references/inference-api.md` |
+## Routing
 
-## Installing the truss CLI
+**Backend / local ops:**
 
-Preferred:
+- `baseten` MCP — interact with backend, manage, observe
+- `truss` CLI — push models/chains from local files / watch (~ live patch). Use `truss [subcommand] --help` to explore
 
-```
-uv tool install truss     # installs the CLI as a uv-managed tool
-# or
-uvx truss <command>       # run without installing
-```
+**Per-task guides:** `ls references/` in this skill directory. These are complementary (partially redundant) to hosted
+docs (MCP / website).
 
-`pip install truss` also works in a regular Python environment. Authentication and first-push setup are covered in `references/truss-cli.md`.
+Common entry points:
 
-## Getting started (custom deployment)
+- `references/truss-cli.md` — `truss push` / `watch` / iterate. Most-used file for model development. Deep dive in 
+  `references/truss-config.md`.
+- `references/model-apis.md` — fastest path when a shared endpoint model fits the use case.
+- `references/deployment-lifecycle.md` — Model / Deployment / Environment semantics + promotion + autoscaling.
+- `references/truss-chains.md` — Chains: compound AI, orchestration, multi-step / multi-model pipelines (RAG, 
+  transcribe → LLM → TTS, chunked audio/video) where each step has its own hardware, deps, and autoscaling.
 
-End-to-end shape of a first Truss deployment. Each step has a deeper reference.
+Non-obvious placements:
 
-1. **Scaffold**: `truss init my-model` creates a directory with a starter `config.yaml` and `model.py`. See `references/truss-cli.md`.
-2. **Choose a flavor** and edit accordingly: keep the generated `model.py` (Python class), replace it with a `docker_server` block (custom server), or use an engine block (engine-only). See the three-flavors table above.
-3. **Edit `config.yaml`**: set `model_name`, `python_version`, `resources`, `requirements`, and any secrets. See `references/truss-config.md`.
-4. **Push**: `truss push` for a published deployment, or `truss push --watch` for an iterative development deployment that live-reloads. See `references/truss-cli.md`.
-5. **Call**: hit the model's inference endpoint (use curl, `requests`, the OpenAI SDK pointed at a Baseten base URL, etc.). See `references/inference-api.md`.
-
-### Minimal Python Truss example
-
-A complete Python-class Truss is just two files. This example deploys [Phi-3-mini-4k-instruct](https://huggingface.co/microsoft/Phi-3-mini-4k-instruct) on a T4 GPU; it is the published walkthrough at <https://docs.baseten.co/examples/customize-a-model>.
-
-`model/model.py`:
-
-```python
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
-
-
-class Model:
-    def __init__(self, **kwargs):
-        self._model = None
-        self._tokenizer = None
-
-    def load(self):
-        self._model = AutoModelForCausalLM.from_pretrained(
-            "microsoft/Phi-3-mini-4k-instruct",
-            device_map="cuda",
-            torch_dtype="auto",
-        )
-        self._tokenizer = AutoTokenizer.from_pretrained(
-            "microsoft/Phi-3-mini-4k-instruct"
-        )
-
-    def predict(self, request):
-        messages = request.pop("messages")
-        model_inputs = self._tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-        inputs = self._tokenizer(model_inputs, return_tensors="pt").to("cuda")
-        with torch.no_grad():
-            outputs = self._model.generate(input_ids=inputs["input_ids"], max_length=256)
-        return {"output": self._tokenizer.decode(outputs[0], skip_special_tokens=True)}
-```
-
-`config.yaml`:
-
-```yaml
-python_version: py311
-requirements:
-  - six==1.17.0
-  - accelerate==0.30.1
-  - einops==0.8.0
-  - transformers==4.41.2
-  - torch==2.3.0
-resources:
-  accelerator: T4
-  use_gpu: true
-```
-
-Deploy and call: `uvx truss push --watch`, then POST to `https://model-{id}.api.baseten.co/development/predict` with an `Authorization: Api-Key $BASETEN_API_KEY` header.
-
-## Out of scope for this skill
-
-- **Advanced Python authoring patterns** (sophisticated streaming, custom batching, performance tuning of the in-process Python server, fine-grained Truss internals). May be covered by a future, more specialized skill. For now, stick to the contract documented in `references/truss-model-py.md` and refer the user to `docs.baseten.co` for deeper material.
-- **Model training on Baseten** (Truss-Train). Out of scope here; mention that a separate path exists if asked.
-- **Web UI navigation.** Defer to docs.baseten.co.
-- Generic Docker / FastAPI / vLLM questions where the user is not deploying to Baseten.
-
-## External resources
-
-When references in this skill don't cover something, consult these before guessing. Per-resource references (e.g. for OpenAPI specs, config schema) live in the relevant reference files.
-
-- **Baseten docs**: <https://docs.baseten.co> - authoritative for product behavior.
-- **Truss source and issues**: <https://github.com/basetenlabs/truss>.
-- **Truss examples**: <https://github.com/basetenlabs/truss-examples> - real `config.yaml` and `model.py` files for many model families.
+- Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) live in `references/truss-config.md` (engines section), not a 
+  dedicated file. Same file owns `model_cache`, secrets, and resources.
+- Authoring-flavor decision — for a single deployment (Python class / custom Docker server / engine-only):
+  top of `references/truss-config.md`. For multiple coordinated deployments: `references/truss-chains.md`.
+- Async / streaming / wake / OpenAI-compat sync routes for *custom* deployments — `inference-api.md` (not 
+  `model-apis.md` = shared endpoints).
+- `docker_server` custom-server flavor (vLLM / TGI / SGLang / Triton — most common path for modern LLMs) — `references/truss-custom-servers.md`.
+- Training jobs (SFT / RL / LoRA) and Frontier Gateway — no reference; use `baseten` MCP + `baseten_docs` MCP.

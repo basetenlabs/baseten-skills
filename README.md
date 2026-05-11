@@ -12,10 +12,19 @@ These skills teach AI coding agents how to use Baseten effectively, grounded in 
 
 ## Install
 
-### Using the skills CLI
+Baseten MCP, docs MCP, and this skill in one shot. Get an API key at <https://app.baseten.co/settings/api_keys>:
 
 ```
-npx skills add basetenlabs/baseten-skills
+export BASETEN_API_KEY=...
+npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_API_KEY}" && \
+npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y && \
+npx add-skill basetenlabs/baseten-skills -g -y
+```
+
+The `truss` CLI is separate — needed for pushing models / chains from local code. See the [CLI docs](https://docs.baseten.co/reference/cli/truss/overview):
+
+```
+pip install truss --upgrade   # respect your package manager (uv, poetry, ...)
 ```
 
 ### Manual (Claude Code)
