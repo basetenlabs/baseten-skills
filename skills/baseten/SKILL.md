@@ -53,6 +53,8 @@ Common entry points:
 - `references/deployment-lifecycle.md` — Model / Deployment / Environment semantics + promotion + autoscaling.
 - `references/truss-chains.md` — Chains: compound AI, orchestration, multi-step / multi-model pipelines (RAG, 
   transcribe → LLM → TTS, chunked audio/video) where each step has its own hardware, deps, and autoscaling.
+- `references/model-dev-loop.md` — workflow for iterating on an existing Truss/Chain after the first deploy: 
+  cost tiers (rebuild / patch / hot-reload), agent-vs-human watch-loop framing, hot-reload admissibility.
 
 Non-obvious placements:
 
