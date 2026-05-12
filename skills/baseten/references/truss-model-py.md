@@ -1,10 +1,15 @@
 # Python-class Truss (`model.py`)
 
-The Python-class flavor runs user-written Python in the request path via a `Model` class with three methods. Pick it when you need Python pre- or post-processing, custom architectures not covered by an engine, or anything that doesn't fit a ready-made HTTP server.
+The Python-class flavor runs user-written Python in the request path via a `Model` class with three methods. Pick it
+when you need Python pre- or post-processing, custom architectures not covered by an engine, or anything that doesn't
+fit a ready-made HTTP server.
 
-If an off-the-shelf server (vLLM, TGI, SGLang, Triton) or a Baseten engine (TensorRT-LLM, BEI, BIS-LLM) does the job, prefer those instead. See `truss-custom-servers.md` and `truss-config.md` (engines section).
+If an off-the-shelf server (vLLM, TGI, SGLang, Triton) or a Baseten engine (TensorRT-LLM, BEI, BIS-LLM) does the job,
+prefer those instead. See `truss-custom-servers.md` and `truss-config.md` (engines section).
 
-This skill covers the core contract. Sophisticated streaming patterns, custom batching, and performance tuning of the in-process server are intentionally out of scope; consult <https://docs.baseten.co/development/model> and the examples repo for those.
+This skill covers the core contract. Sophisticated streaming patterns, custom batching, and performance tuning of the
+in-process server are intentionally out of scope; consult <https://docs.baseten.co/development/model> and the examples
+repo for those.
 
 ## Directory shape
 
@@ -42,7 +47,8 @@ class Model:
 
 ### What `__init__` receives
 
-Truss inspects the `__init__` signature and passes only the keyword arguments it explicitly accepts. The recognized names (per `truss/templates/server/model_wrapper.py`) are:
+Truss inspects the `__init__` signature and passes only the keyword arguments it explicitly accepts. The recognized
+names (per `truss/templates/server/model_wrapper.py`) are:
 
 - `config`: parsed `config.yaml` as a dict.
 - `data_dir`: path to the bundled `data/` directory.
@@ -62,23 +68,28 @@ def __init__(self, secrets, config):    # receive only what you name
 
 ### `load`
 
-Runs once after `__init__`, before the server accepts requests. Load weights and other heavy resources here so the readiness check correctly gates traffic.
+Runs once after `__init__`, before the server accepts requests. Load weights and other heavy resources here so the
+readiness check correctly gates traffic.
 
 ### `predict`
 
-Runs per request. Receives the request body (typically a dict). Returns a dict, bytes, or a generator (see streaming below).
+Runs per request. Receives the request body (typically a dict). Returns a dict, bytes, or a generator (see streaming
+below).
 
 ## Worked examples
 
-For real model code, do not invent it. Read the examples repo, where each model directory has a complete `config.yaml` plus `model/model.py`:
+For real model code, do not invent it. Read the examples repo, where each model directory has a complete `config.yaml`
+plus `model/model.py`:
 
 - <https://github.com/basetenlabs/truss-examples>
 
-Common starting points include the LLM examples (e.g. Mistral, Llama variants), image generation (SDXL), and multimodal pipelines.
+Common starting points include the LLM examples (e.g. Mistral, Llama variants), image generation (SDXL), and multimodal
+pipelines.
 
 ## Streaming responses
 
-Return a generator from `predict` to stream chunks. The server emits them as a streaming HTTP response; clients read with `requests` + `iter_content`, SSE parsers, or the OpenAI SDK for OpenAI-compatible payloads.
+Return a generator from `predict` to stream chunks. The server emits them as a streaming HTTP response; clients read
+with `requests` + `iter_content`, SSE parsers, or the OpenAI SDK for OpenAI-compatible payloads.
 
 ```python
 def predict(self, model_input):
@@ -91,24 +102,30 @@ See <https://docs.baseten.co/inference/streaming> for the client side.
 
 ## Async `predict`
 
-`predict` may be `async def` for I/O-bound work (e.g. calling external services inside the request). Baseten's server awaits it appropriately. CPU- or GPU-bound model work should stay sync or offload via a thread pool.
+`predict` may be `async def` for I/O-bound work (e.g. calling external services inside the request). Baseten's server
+awaits it appropriately. CPU- or GPU-bound model work should stay sync or offload via a thread pool.
 
 ## Binary output
 
-Return `bytes` from `predict` to emit a binary response (e.g. an image, audio clip). Set headers via the `starlette` response helpers if you need specific `Content-Type`; see the examples repo for patterns.
+Return `bytes` from `predict` to emit a binary response (e.g. an image, audio clip). Set headers via the `starlette`
+response helpers if you need specific `Content-Type`; see the examples repo for patterns.
 
 ## Accessing secrets and `data_dir`
 
 - `self._secrets["name"]` pulls values for secrets declared in `config.yaml`.
-- `self._data_dir` is a `pathlib.Path` to the bundled `data/` directory. Use it for tokenizers, small aux files, or anything baked into the image.
+- `self._data_dir` is a `pathlib.Path` to the bundled `data/` directory. Use it for tokenizers, small aux files, or
+  anything baked into the image.
 
 ## Gotchas
 
-- **Load weights in `load`, not `__init__`.** The server uses `load()` completion to gate readiness; weight loading in `__init__` delays startup without the benefit of the readiness gate.
+- **Load weights in `load`, not `__init__`.** The server uses `load()` completion to gate readiness; weight loading in
+  `__init__` delays startup without the benefit of the readiness gate.
 - **`predict` runs per request.** Do not reload the model or re-open heavy resources inside it.
-- **`predict_concurrency` and `num_workers`** live in `config.yaml` under `runtime`. If a sync `predict` does long blocking work, concurrency settings determine throughput; consult the docs when tuning.
+- **`predict_concurrency` and `num_workers`** live in `config.yaml` under `runtime`. If a sync `predict` does long
+  blocking work, concurrency settings determine throughput; consult the docs when tuning.
 - **Logs go to stdout/stderr.** Use ordinary `logging` or `print`; Baseten captures them.
-- **Local packages live in `packages/`**, not in `requirements`. Add the directory to `external_package_dirs` in `config.yaml`.
+- **Local packages live in `packages/`**, not in `requirements`. Add the directory to `external_package_dirs` in
+  `config.yaml`.
 
 ## Further reading
 

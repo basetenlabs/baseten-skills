@@ -1,8 +1,12 @@
 # Baseten Model APIs
 
-Model APIs are Baseten's managed catalog of pre-hosted LLMs (DeepSeek, GLM, Kimi, and others). OpenAI-compatible. No deployment step. Pay per million tokens. Pick this over a custom Truss deployment whenever a supported model does the job; you avoid packaging, infra choices, and scaling decisions entirely.
+Model APIs are Baseten's managed catalog of pre-hosted LLMs (DeepSeek, GLM, Kimi, and others). OpenAI-compatible. No
+deployment step. Pay per million tokens. Pick this over a custom Truss deployment whenever a supported model does the
+job; you avoid packaging, infra choices, and scaling decisions entirely.
 
-This is a distinct surface from the inference API for custom deployments (see `inference-api.md`). Both speak OpenAI-compatible chat completions on their respective endpoints, but Model APIs live at a single shared endpoint regardless of which model you call, whereas custom deployments are on per-model subdomains.
+This is a distinct surface from the inference API for custom deployments (see `inference-api.md`). Both speak
+OpenAI-compatible chat completions on their respective endpoints, but Model APIs live at a single shared endpoint
+regardless of which model you call, whereas custom deployments are on per-model subdomains.
 
 ## Base URL and auth
 
@@ -18,7 +22,8 @@ Authorization: Api-Key $BASETEN_API_KEY
 
 API keys are created at <https://app.baseten.co/settings/account/api_keys>.
 
-Model APIs require the specific model to be **enabled** in the workspace from <https://app.baseten.co/model-apis/create> before it can be called. A 404 on the model slug usually means the model is valid but not enabled in this workspace.
+Model APIs require the specific model to be **enabled** in the workspace from <https://app.baseten.co/model-apis/create>
+before it can be called. A 404 on the model slug usually means the model is valid but not enabled in this workspace.
 
 ## Call pattern
 
@@ -43,7 +48,8 @@ response = client.chat.completions.create(
 print(response.choices[0].message.content)
 ```
 
-Substitute any enabled model slug for the `model=` argument. Unlike the custom-deployment sync endpoint (where `model=` is a placeholder), **on Model APIs the `model=` field actively selects which model serves the request** - get it right.
+Substitute any enabled model slug for the `model=` argument. Unlike the custom-deployment sync endpoint (where `model=`
+is a placeholder), **on Model APIs the `model=` field actively selects which model serves the request** - get it right.
 
 ## Streaming
 
@@ -99,7 +105,7 @@ Pricing moves; defer to the current table at <https://docs.baseten.co/inference/
 Standard HTTP:
 
 | Code | Meaning |
-|---|---|
+| --- | --- |
 | 400 | Invalid request (check parameters) |
 | 401 | Invalid or missing API key |
 | 402 | Payment required |
@@ -109,11 +115,15 @@ Standard HTTP:
 
 ## Gotchas
 
-- **Models must be enabled in the workspace** before they can be called. 404 on a valid slug usually means "not enabled here", not "does not exist on Baseten".
-- **The base URL differs from custom deployments.** Model APIs live at `inference.baseten.co`; custom deployments live at `model-{id}.api.baseten.co`. Swapping one for the other will fail.
+- **Models must be enabled in the workspace** before they can be called. 404 on a valid slug usually means "not enabled
+  here", not "does not exist on Baseten".
+- **The base URL differs from custom deployments.** Model APIs live at `inference.baseten.co`; custom deployments live
+  at `model-{id}.api.baseten.co`. Swapping one for the other will fail.
 - **The `model=` field is meaningful here.** It picks the model. (On custom deployments it is a placeholder.)
-- **Auth header is `Authorization: Api-Key <key>`, not `Bearer <key>`.** OpenAI SDK handles this automatically; hand-rolled HTTP must use the `Api-Key` prefix.
-- **Prefix caching is on by default.** Requests sharing a prefix with a recent request will see cache behavior; see the pricing docs for how that maps to billing.
+- **Auth header is `Authorization: Api-Key <key>`, not `Bearer <key>`.** OpenAI SDK handles this automatically;
+  hand-rolled HTTP must use the `Api-Key` prefix.
+- **Prefix caching is on by default.** Requests sharing a prefix with a recent request will see cache behavior; see the
+  pricing docs for how that maps to billing.
 
 ## Further reading
 
@@ -123,4 +133,4 @@ Standard HTTP:
 - Tool calling: <https://docs.baseten.co/inference/function-calling>
 - Reasoning: <https://docs.baseten.co/inference/model-apis/reasoning>
 - Rate limits and budgets: <https://docs.baseten.co/inference/model-apis/rate-limits-and-budgets>
-- Custom deployments (when a managed model is not a fit): `inference-api.md` in this skill.
+- Custom deployments (when a managed model is not a fit): `inference-api.md`.

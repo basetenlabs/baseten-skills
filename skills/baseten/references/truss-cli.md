@@ -1,12 +1,15 @@
 # `truss` CLI
 
-The `truss` CLI builds, deploys, and live-patches Trusses. The published reference is at <https://docs.baseten.co/reference/cli/truss/overview>.
+The `truss` CLI builds, deploys, and live-patches Trusses. The published reference is at
+<https://docs.baseten.co/reference/cli/truss/overview>.
 
-This file covers Truss model commands only. For the `truss chains` subcommand group, see `truss-chains.md` in this skill. The `truss train` group (Truss Train) is not covered in this skill; see <https://docs.baseten.co/reference/cli/training>.
+This file covers Truss model commands only. For the `truss chains` subcommand group, see `truss-chains.md`. The
+`truss train` group (Truss Train) is not covered here; see <https://docs.baseten.co/reference/cli/training>.
 
 ## Install
 
-See the "Installing the truss CLI" section of SKILL.md. Short version: `uv tool install truss` (or `uvx truss <command>` to run without installing); `pip install truss` also works.
+`uv tool install truss` (or `uvx truss <command>` to run without installing); `pip install truss` also works. Respect
+the user's preferred package manager.
 
 ## Authenticate
 
@@ -14,7 +17,8 @@ See the "Installing the truss CLI" section of SKILL.md. Short version: `uv tool 
 truss login
 ```
 
-Paste an API key from <https://app.baseten.co/settings/account/api_keys> when prompted. Truss stores credentials in `.trussrc` for future commands. In CI, set `BASETEN_API_KEY` and use `--remote` to select the saved remote name.
+Paste an API key from <https://app.baseten.co/settings/account/api_keys> when prompted. Truss stores credentials in
+`.trussrc` for future commands. In CI, set `BASETEN_API_KEY` and use `--remote` to select the saved remote name.
 
 ## `truss init` - scaffold
 
@@ -34,11 +38,13 @@ my-model/
 └── packages/
 ```
 
-Edit `model/model.py` (Python class flavor), or replace it with `docker_server` config (custom server flavor), or remove it entirely and add an engine block (engine-only).
+Edit `model/model.py` (Python class flavor), or replace it with `docker_server` config (custom server flavor), or remove
+it entirely and add an engine block (engine-only).
 
 ## `truss push` - the main flow
 
-`truss push` is the workhorse. Default behavior creates a **published** deployment (immutable snapshot). Use flags to change target, control live reload, wait for completion, and stream logs.
+`truss push` is the workhorse. Default behavior creates a **published** deployment (immutable snapshot). Use flags to
+change target, control live reload, wait for completion, and stream logs.
 
 ### Common patterns
 
@@ -74,12 +80,17 @@ truss push --environment staging
 
 ### Key flags
 
-- `--watch`: create a **development** deployment and watch for source changes, applying live patches. The dev model stays warm by default (no scale-to-zero) while watching.
-- `--watch-hot-reload`: with `--watch`, swap the model class in-process instead of restarting the server. Faster iteration; preserves loaded weights and caches; does **not** re-run `__init__` or `load`. Use when you only changed `predict` logic.
+- `--watch`: create a **development** deployment and watch for source changes, applying live patches. The dev model
+  stays warm by default (no scale-to-zero) while watching.
+- `--watch-hot-reload`: with `--watch`, swap the model class in-process instead of restarting the server. Faster
+  iteration; preserves loaded weights and caches; does **not** re-run `__init__` or `load`. Use when you only changed
+  `predict` logic.
 - `--promote`: published deployment, promoted to production even if a production deployment already exists.
 - `--environment <name>`: published deployment, promoted into the named environment. When set, `--promote` is ignored.
-- `--preserve-previous-production-deployment`: with `--promote`, inherit the previous production deployment's autoscaling settings.
-- `--preserve-env-instance-type` / `--no-preserve-env-instance-type`: with `--environment`, keep the environment's configured instance type instead of the Truss config's `resources`. Default is to preserve.
+- `--preserve-previous-production-deployment`: with `--promote`, inherit the previous production deployment's
+  autoscaling settings.
+- `--preserve-env-instance-type` / `--no-preserve-env-instance-type`: with `--environment`, keep the environment's
+  configured instance type instead of the Truss config's `resources`. Default is to preserve.
 - `--deployment-name <name>`: name the published deployment (alphanumeric, `.`, `-`, `_`). Ignored for `--watch`.
 - `--model-name <name>`: temporarily override `model_name` without editing `config.yaml`.
 - `--wait` / `--no-wait`: block until the deploy finishes; exit non-zero on failure.
@@ -100,9 +111,11 @@ truss push --environment staging
 truss watch
 ```
 
-Re-attaches to an existing development deployment and applies live patches when files change. Equivalent to running `truss push --watch` once and resuming the watch loop later.
+Re-attaches to an existing development deployment and applies live patches when files change. Equivalent to running
+`truss push --watch` once and resuming the watch loop later.
 
-`truss watch` keeps the dev deployment **warm** (prevents scale-to-zero) while it is running. If the user expects the dev deployment to scale to zero while a watch is active, surface this so they understand why replicas are still running.
+`truss watch` keeps the dev deployment **warm** (prevents scale-to-zero) while it is running. If the user expects the
+dev deployment to scale to zero while a watch is active, surface this so they understand why replicas are still running.
 
 Other flags:
 
@@ -111,11 +124,13 @@ Other flags:
 
 ## `truss container` - local debugging
 
-`truss container` builds and runs the Truss as a Docker container locally. Use this to reproduce build failures or inspect the model server outside of Baseten.
+`truss container` builds and runs the Truss as a Docker container locally. Use this to reproduce build failures or
+inspect the model server outside of Baseten.
 
 ## `truss image` - build and manage images
 
-`truss image build` produces the Docker image without deploying. Useful for checking what gets shipped, or for offline image distribution.
+`truss image build` produces the Docker image without deploying. Useful for checking what gets shipped, or for offline
+image distribution.
 
 ## `truss model-logs` - fetch deployment logs
 
@@ -127,14 +142,19 @@ Fetches recent logs for a deployment. For continuous streaming during a push, pr
 
 ## `truss configure`, `truss whoami`, `truss cleanup`
 
-Workspace and account utilities. `whoami` prints the current authenticated user. `configure` manages remotes in `.trussrc`. `cleanup` removes locally cached deployment artifacts.
+Workspace and account utilities. `whoami` prints the current authenticated user. `configure` manages remotes in
+`.trussrc`. `cleanup` removes locally cached deployment artifacts.
 
 ## Gotchas
 
-- **Default `truss push` is a published deployment, not a dev one.** For an iterative dev loop, use `--watch` (or `truss watch` afterwards).
-- **`truss watch` keeps the dev deployment warm by default.** Replicas do not scale to zero while the watch is running. Stop the watch (or accept the cost) accordingly.
-- **`--watch-hot-reload` does not re-run `__init__` or `load`.** If your change relies on new state set up there, do a full reload (omit `--watch-hot-reload`) instead.
-- **`.trussrc` holds credentials.** Do not commit it. In CI, prefer `BASETEN_API_KEY` plus `--remote <name>` over committing `.trussrc`.
+- **Default `truss push` is a published deployment, not a dev one.** For an iterative dev loop, use `--watch` (or
+  `truss watch` afterwards).
+- **`truss watch` keeps the dev deployment warm by default.** Replicas do not scale to zero while the watch is running.
+  Stop the watch (or accept the cost) accordingly.
+- **`--watch-hot-reload` does not re-run `__init__` or `load`.** If your change relies on new state set up there, do a
+  full reload (omit `--watch-hot-reload`) instead.
+- **`.trussrc` holds credentials.** Do not commit it. In CI, prefer `BASETEN_API_KEY` plus `--remote <name>` over
+  committing `.trussrc`.
 
 ## Further reading
 
@@ -142,4 +162,4 @@ Workspace and account utilities. `whoami` prints the current authenticated user.
 - `truss push` reference: <https://docs.baseten.co/reference/cli/truss/push>
 - `truss watch` reference: <https://docs.baseten.co/reference/cli/truss/watch>
 - Deploy and iterate guide: <https://docs.baseten.co/development/model/deploy-and-iterate>
-- Calling deployed models (when ready to test from outside the CLI): see `inference-api.md` in this skill.
+- Calling deployed models (when ready to test from outside the CLI): see `inference-api.md`.

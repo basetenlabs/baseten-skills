@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""Normalise LLM-instruction markdown: prettier prose wrap + compact tables.
+
+Usage: bin/markdown_llm_preprocessor [--check] [--width N] file [file ...]
+
+Scope is intentionally narrow — only SKILL.md and reference files under
+skills/<name>/references/ within this repo. Other markdown (README,
+CONTRIBUTING, LICENSE, …) is left alone. The script refuses to operate on
+files outside the allowlist.
+
+Prettier handles prose wrapping (via --stdin-filepath, so the source file is
+never mutated mid-run). A post-pass strips alignment padding from GFM table
+blocks while leaving fenced code blocks untouched. Idempotent.
+"""
+
+import argparse
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+_SEP_CELL = re.compile(r"^(:?)-+(:?)$")
+_FENCE_BLOCK = re.compile(r"(?ms)^(```[^\n]*\n.*?^```[^\n]*\n)")
+_TABLE_BLOCK = re.compile(r"(?m)^(\|[^\n]*\n)+")
+_ALLOWED = re.compile(
+    r"(^|/)skills/[^/]+/SKILL\.md$"
+    r"|(^|/)skills/[^/]+/references/[^/]+\.md$"
+)
+
+
+def _normalize_cell(cell: str) -> str:
+    """Reduce a separator cell like ':-------' to ':---'."""
+    m = _SEP_CELL.match(cell)
+    if m:
+        return m.group(1) + "---" + m.group(2)
+    return cell
+
+
+def _compact_table_block(m: re.Match) -> str:
+    out = []
+    for line in m.group(0).splitlines(keepends=True):
+        cells = [_normalize_cell(c.strip()) for c in line.rstrip("\n").strip("|").split("|")]
+        out.append("| " + " | ".join(cells) + " |\n")
+    return "".join(out)
+
+
+def compact_tables(text: str) -> str:
+    """Strip column-alignment padding from GFM table blocks outside fenced code blocks."""
+    # Split alternates: [prose, fence, prose, fence, ..., prose]
+    parts = _FENCE_BLOCK.split(text)
+    for i in range(0, len(parts), 2):
+        parts[i] = _TABLE_BLOCK.sub(_compact_table_block, parts[i])
+    return "".join(parts)
+
+
+def fmt_text(text: str, path: Path, width: int) -> str:
+    """Run prettier on `text` (path used only for parser inference) and compact tables."""
+    result = subprocess.run(
+        [
+            "npx", "--yes", "prettier@3",
+            f"--print-width={width}",
+            "--prose-wrap=always",
+            "--stdin-filepath", str(path),
+        ],
+        input=text,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(result.stderr, file=sys.stderr)
+        sys.exit(result.returncode)
+    return compact_tables(result.stdout)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("files", nargs="+", type=Path)
+    ap.add_argument("--check", action="store_true", help="Exit non-zero if any file would change")
+    ap.add_argument("--width", type=int, default=120)
+    args = ap.parse_args()
+
+    out_of_scope = [p for p in args.files if not _ALLOWED.search(str(p))]
+    if out_of_scope:
+        for p in out_of_scope:
+            print(f"refusing to format {p}: not a SKILL.md or skills/*/references/*.md file", file=sys.stderr)
+        sys.exit(2)
+
+    dirty: list[Path] = []
+    for path in args.files:
+        original = path.read_text()
+        formatted = fmt_text(original, path, args.width)
+        if formatted == original:
+            continue
+        dirty.append(path)
+        if not args.check:
+            path.write_text(formatted)
+
+    if args.check and dirty:
+        for p in dirty:
+            print(f"would reformat: {p}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
