@@ -1,0 +1,10 @@
+# Run locally: `pre-commit run --all-files` or `pre-commit run --files <paths>`.
+fail_fast: false
+repos:
+  - repo: local
+    hooks:
+      - id: markdown-llm-preprocessor
+        name: markdown LLM preprocessor (SKILL.md + references/*.md)
+        entry: bin/markdown_llm_preprocessor --check
+        language: system
+        files: '(^|/)skills/[^/]+/(SKILL\.md|references/[^/]+\.md)$'
