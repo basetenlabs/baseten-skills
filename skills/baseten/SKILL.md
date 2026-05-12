@@ -1,6 +1,6 @@
 ---
 name: baseten
-description:
+description: >-
   Skill for anything Baseten - deploying/operating models on Dedicated Inference (Truss, custom Docker servers, TRT-LLM
   engines, Chains), calling pre-hosted Model APIs, running Training jobs (SFT/RL/LoRA), or Model Frontier Gateway.
 ---
