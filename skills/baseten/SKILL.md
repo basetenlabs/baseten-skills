@@ -42,27 +42,49 @@ API key from `app.baseten.co/settings/api_keys` (ask the user to create key).
 - `baseten` MCP — interact with backend, manage, observe
 - `truss` CLI — push models/chains from local files / watch (~ live patch). Use `truss [subcommand] --help` to explore
 
-**Per-task guides:** `ls references/` in this skill directory. These are complementary (partially redundant) to hosted
-docs (MCP / website).
+**Per-task guides** (`ls references/`, complementary to hosted docs):
 
-Common entry points:
-
-- `references/truss-cli.md` — `truss push` / `watch` / iterate. Most-used file for model development. Deep dive in 
-  `references/truss-config.md`.
-- `references/model-apis.md` — fastest path when a shared endpoint model fits the use case.
+- `references/truss-cli.md` — `truss push` / `watch` / iterate. Most-used. Deep dive: `references/truss-config.md`.
+- `references/truss-model-py.md` — Python-class flavor (custom pre/post, non-engine architectures).
+- `references/truss-custom-servers.md` — `docker_server` flavor (vLLM / TGI / SGLang / Triton — most common modern-LLM path).
+- `references/truss-chains.md` — multi-step pipelines (RAG, ASR→LLM→TTS, chunked audio/video) with per-step HW + autoscaling.
+- `references/model-apis.md` — shared pre-hosted endpoints (DeepSeek, GLM, Kimi, …). Fastest when one fits.
+- `references/inference-api.md` — calling **custom** deployments: async / streaming / wake / OpenAI-compat sync routes.
+- `references/management-api.md` — programmatic control plane (models, deployments, envs, secrets). What `truss` CLI uses under the hood.
 - `references/deployment-lifecycle.md` — Model / Deployment / Environment semantics + promotion + autoscaling.
-- `references/truss-chains.md` — Chains: compound AI, orchestration, multi-step / multi-model pipelines (RAG, 
-  transcribe → LLM → TTS, chunked audio/video) where each step has its own hardware, deps, and autoscaling.
-- `references/model-dev-loop.md` — workflow for iterating on an existing Truss/Chain after the first deploy: 
-  cost tiers (rebuild / patch / hot-reload), agent-vs-human watch-loop framing, hot-reload admissibility.
+- `references/model-dev-loop.md` — post-first-deploy iteration: rebuild / patch / hot-reload cost tiers, agent-vs-human watch loop.
 
-Non-obvious placements:
+## Gotchas
 
-- Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) live in `references/truss-config.md` (engines section), not a 
-  dedicated file. Same file owns `model_cache`, secrets, and resources.
-- Authoring-flavor decision — for a single deployment (Python class / custom Docker server / engine-only):
-  top of `references/truss-config.md`. For multiple coordinated deployments: `references/truss-chains.md`.
-- Async / streaming / wake / OpenAI-compat sync routes for *custom* deployments — `inference-api.md` (not 
-  `model-apis.md` = shared endpoints).
-- `docker_server` custom-server flavor (vLLM / TGI / SGLang / Triton — most common path for modern LLMs) — `references/truss-custom-servers.md`.
-- Training jobs (SFT / RL / LoRA) and Frontier Gateway — no reference; use `baseten` MCP + `baseten_docs` MCP.
+High-signal section, accreted from real failures. Grow over time rather than rewriting earlier sections.
+
+### Source heterogeneity & drift
+
+Content lives across systems that don't overlap cleanly and drift independently. No single source is authoritative; for any non-trivial claim ("supported", perf numbers, recommended approach), **triangulate across ≥2 sources**. Surface contradictions to the user rather than papering over them.
+
+| Source | Strength | Gap / quirk |
+|---|---|---|
+| `baseten_docs` MCP / `docs.baseten.co` | API specs, protocol details, knobs | Lags product; no perf numbers |
+| `baseten.co/library/<id>` (marketing) | Flagship managed models, perf claims | Some entries are sales-gated, not self-serve |
+| `baseten` MCP `list_library_models` | What's actually one-click API-deployable | Doesn't include every marketing-library entry; sparse tags |
+| `baseten.co/blog/` | Concrete latency / cost / vs-competitor numbers | Unstructured; **not in** docs MCP — discover via `baseten.co/llms.txt` |
+| `baseten.co/solutions/...` | High-level pitch | May describe flagship features that need a Baseten engagement |
+| `truss-examples` GitHub repo | Working code patterns | **Often outdated / drifted from current API.** Consult with caution, as a last resort. Don't sink time fixing broken examples — pick another path. |
+
+- Library page exists but model absent from `list_library_models` → likely managed/flagship; tell the user it may need engagement.
+- Perf numbers found only in a blog → cite as blog claim, not as official spec.
+- If two sources disagree → tell the user; let them decide which to trust.
+- Can't find something via docs MCP → `WebFetch` `baseten.co/llms.txt` or `docs.baseten.co/llms.txt` for an index, then fetch the page directly.
+
+### Non-obvious placements within `references/`
+
+- Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`, secrets, resources).
+- Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
+- Training (SFT / RL / LoRA) and Frontier Gateway: no reference — use `baseten` MCP + `baseten_docs` MCP.
+
+### Tool quirks
+
+- **`baseten_docs` MCP `cat`/`head` duplicates content.** Long `.mdx` files come back with cumulative-context preamble — the same section body repeated many times in one read. Use `rg -n <pattern>` for targeted reads; avoid full `cat` on long pages. If a local `docs/` checkout exists, read `.mdx` from disk instead.
+- **`baseten_docs` MCP search is lexical.** "speech to text" can rank TTS above STT. When modality matters, query by path (`rg -l streaming-transcription /reference`) or use specific jargon.
+- **`list_library_models` tags are sparse** (mostly empty or `openai-compatible`) — no modality tags. Filter by `display_name` / `hf_repo_id` substrings.
+- **Blog content is not in the docs MCP.** Fetch `baseten.co/llms.txt` to enumerate blog URLs by topic, then `WebFetch` the post.
