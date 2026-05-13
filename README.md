@@ -23,7 +23,7 @@ export BASETEN_MCP_KEY=...
 { [ -n "$BASETEN_MCP_KEY" ] && [ "$BASETEN_MCP_KEY" != "..." ]; } || { echo "Error: set BASETEN_MCP_KEY first"; false; } && \
 npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}" && \
 npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y && \
-npx add-skill basetenlabs/baseten-skills -g -y
+npx skills add basetenlabs/baseten-skills -g -y
 ```
 
 `-g` installs it globally on your host and `-y` confirms selection for all detected harnesses. If your harness

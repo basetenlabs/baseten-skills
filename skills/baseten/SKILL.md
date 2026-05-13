@@ -25,7 +25,7 @@ cross-cloud HA, and seamless developer workflows.
 | `baseten_docs` MCP | Lexical/keyword search of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
 | `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login` once. | `pip install truss --upgrade` (respect user package manager: uv, poetry...) |
 | `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
-| This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx add-skill basetenlabs/baseten-skills -g -y` |
+| This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx skills add basetenlabs/baseten-skills -g -y` |
 
 ### Setup
 
