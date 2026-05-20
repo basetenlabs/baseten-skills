@@ -20,8 +20,8 @@ the user's preferred package manager.
 truss login
 ```
 
-Paste an API key from <https://app.baseten.co/settings/account/api_keys> when prompted. Truss stores credentials in
-`.trussrc` for future commands. In CI, set `BASETEN_API_KEY` and use `--remote` to select the saved remote name.
+Paste an API key from <https://app.baseten.co/settings/api_keys> when prompted. Truss stores credentials in `.trussrc`
+for future commands. In CI, set `BASETEN_API_KEY` and use `--remote` to select the saved remote name.
 
 ## `truss init` - scaffold
 
@@ -157,8 +157,8 @@ Workspace and account utilities. `whoami` prints the current authenticated user.
 - **`--watch-hot-reload` does not re-run `__init__` or `load`.** If your change relies on new state set up there, do a
   full reload (omit `--watch-hot-reload`) instead.
 - **`.trussrc` holds credentials.** Do not commit it. In CI / scripted flows, prefer `BASETEN_API_KEY` plus
-  `--remote <name>` over committing `.trussrc`. Truss is moving toward OS keyring storage; if asking for a key, ask
-  the user to export it as an env var rather than reading or writing credential files yourself.
+  `--remote <name>` over committing `.trussrc`. Truss is moving toward OS keyring storage; if asking for a key, ask the
+  user to export it as an env var rather than reading or writing credential files yourself.
 
 ## Further reading
 

@@ -22,8 +22,8 @@ Authorization: Bearer $BASETEN_API_KEY
 
 `Bearer` is what the OpenAI SDK sets and what the docs prescribe for MAPI — use it.
 
-API keys are created at <https://app.baseten.co/settings/account/api_keys>. Inference-scoped keys are sufficient for
-MAPI calls (don't grant management scope for end-user inference clients).
+API keys are created at <https://app.baseten.co/settings/api_keys>. Inference-scoped keys are sufficient for MAPI calls
+(don't grant management scope for end-user inference clients).
 
 Model APIs require the specific model to be **enabled** in the workspace from <https://app.baseten.co/model-apis/create>
 before it can be called. A 404 on the model slug usually means the model is valid but not enabled in this workspace.
@@ -94,7 +94,7 @@ Current per-model support matrix is at <https://docs.baseten.co/inference/model-
 
 ```
 curl https://inference.baseten.co/v1/models \
-  -H "Authorization: Api-Key $BASETEN_API_KEY"
+  -H "Authorization: Bearer $BASETEN_API_KEY"
 ```
 
 Returns current slugs with metadata (context lengths, pricing, features).

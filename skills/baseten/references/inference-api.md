@@ -13,7 +13,7 @@ concepts).
 ## Authentication
 
 Every request sends an `Authorization: Api-Key $BASETEN_API_KEY` header. API keys are created at
-<https://app.baseten.co/settings/account/api_keys>.
+<https://app.baseten.co/settings/api_keys>.
 
 ## Endpoint URL shape
 

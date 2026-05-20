@@ -18,8 +18,8 @@ Every request needs an API key in the `Authorization` header:
 Authorization: Api-Key $BASETEN_API_KEY
 ```
 
-API keys are created at <https://app.baseten.co/settings/account/api_keys> (user keys) or programmatically via the API
-Key endpoints.
+API keys are created at <https://app.baseten.co/settings/api_keys> (user keys) or programmatically via the API Key
+endpoints.
 
 ## Resource shape at a glance
 

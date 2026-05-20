@@ -2,8 +2,8 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training jobs (SFT/RL/LoRA),
-  or Model Frontier Gateway.
+  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training jobs (SFT/RL/LoRA), or Model
+  Frontier Gateway.
 ---
 
 ## Baseten Product Overview
@@ -20,28 +20,29 @@ cross-cloud HA, and seamless developer workflows.
 
 ## Agent DX Toolkit
 
-| Component | Provides                                                                                                             | Install |
-| --- |----------------------------------------------------------------------------------------------------------------------| --- |
+| Component | Provides | Install |
+| --- | --- | --- |
 | `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains. API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
-| `baseten_docs` MCP | Keyword search of `docs.baseten.co`, grep. No auth.                                                                  | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
-| `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login` once.                         | `pip install truss --upgrade` (respect user package manager: uv, poetry...) |
-| `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs).                                           | reachable via HTTP |
-| This skill | `SKILL.md` + `references/*.md` loaded on demand.                                                                     | `npx skills add basetenlabs/baseten-skills -g -y` |
+| `baseten_docs` MCP | Keyword search of `docs.baseten.co`, grep. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
+| `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login` once. | `pip install truss --upgrade` (respect user package manager: uv, poetry...) |
+| `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
+| This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx skills add basetenlabs/baseten-skills -g -y` |
 
 ### Setup
 
-- Any subset works, full install recommend.
-- Suggest additional installs when the current task benefits from or requires them; help user with installation, but 
+- Any subset works, full install recommended.
+- Suggest additional installs when the current task benefits from or requires them; help user with installation, but
   elicit preferences first.
 - Ensure `BASETEN_MCP_KEY` is provided when installing Baseten MCP (user can create key at
- `app.baseten.co/settings/api_keys`). Caveat: this binds the MCP to a specific org/workspace. Switching is not yet 
-  supported.
-- Truss CLI only needed for making deployments (check `truss --version`); prior login (multi-workspace users must 
+  `app.baseten.co/settings/api_keys`). Caveat: an MCP instance binds to one org/workspace at install time; switching the
+  bound workspace later is not supported. To work with multiple workspaces, install additional MCP instances under
+  different names with different keys (see last bullet of this section).
+- Truss CLI only needed for making deployments (check `truss --version`); prior login (multi-workspace users must
   provide `--remote <name>`). Explore with `truss [subcommand] --help`.
 - Docs MCP missing → grep / fetch `llms.txt`.
 - Backend MCP is API-key-only (currently); OAuth-only harnesses can still use the other components.
-- If backend MCP server is needed for different orgs/workspaces, add multiple MCP instances with different names/keys 
-  or use env-var expansion in the agent's config file and set the env var to the respective workspace's key.
+- If backend MCP server is needed for different orgs/workspaces, add multiple MCP instances with different names/keys or
+  use env-var expansion in the agent's config file and set the env var to the respective workspace's key.
 
 ## Pick your authoring surface (for creating deployments)
 
@@ -52,17 +53,17 @@ Surfaces are stacked by opinion-strength, not just author convenience: **engines
 performance-tuned for one architecture and are the fastest path when they fit; **custom Docker servers** wrap mature
 inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code in the
 request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management, structured
-error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python truss and chains share 
-live-patch iteration (`truss watch`), all types support per-replica autoscaling, scale-to-zero, and environments / 
+error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and Chains share
+live-patch iteration (`truss watch`); all flavors support per-replica autoscaling, scale-to-zero, and environments /
 promotions.
 
-| You want…                                                                                                    | Flavor | Specialization | When NOT to pick                                                        |
-|--------------------------------------------------------------------------------------------------------------| --- | --- |-------------------------------------------------------------------------|
-| Hosted LLM, no deploy step                                                                                   | Model APIs | `model-apis.md` | model not in catalog; need custom hardware, requirements, stability...  |
-| LLM on an off-the-shelf server (vLLM / SGLang / TGI / Triton / NIM)                                          | Custom Docker server | `truss-custom-servers.md` | the server doesn't exist or you need Python in the request path         |
-| LLM/embedding via a Baseten engine (TRT-LLM / BEI / BIS-LLM); minimal config, no Python                      | Engine-only `config.yaml` | `truss-config.md` (engines section) | architecture not covered by an engine; you need custom logic            |
-| Custom Python in the request path (pre/post, custom arch, weird IO)                                          | Python-class Truss (`model.py`) | `truss-model-py.md` + `truss-config.md` | an engine or off-the-shelf server fits — pick that, it's faster to ship |
-| Multi-step pipeline with **heterogeneous hardware / per-step scaling** (RAG, ASR→LLM→TTS, fan-out, chunking) | Chains | `truss-chains.md` | one-stage or homogeneous — a single Truss is simpler                    |
+| You want… | Flavor | Specialization | When NOT to pick |
+| --- | --- | --- | --- |
+| Hosted LLM, no deploy step | Model APIs | `model-apis.md` | model not in catalog; need custom hardware, requirements, stability... |
+| LLM on an off-the-shelf server (vLLM / SGLang / TGI / Triton / NIM) | Custom Docker server | `truss-custom-servers.md` | the server doesn't exist or you need Python in the request path |
+| LLM/embedding via a Baseten engine (TRT-LLM / BEI / BIS-LLM); minimal config, no Python | Engine-only `config.yaml` | `truss-config.md` (engines section) | architecture not covered by an engine; you need custom logic |
+| Custom Python in the request path (pre/post, custom arch, weird IO) | Python-class Truss (`model.py`) | `truss-model-py.md` + `truss-config.md` | an engine or off-the-shelf server fits — pick that, it's faster to ship |
+| Multi-step pipeline with **heterogeneous hardware / per-step scaling** (RAG, ASR→LLM→TTS, fan-out, chunking) | Chains | `truss-chains.md` | one-stage or homogeneous — a single Truss is simpler |
 
 Orthogonal operational surfaces (independent of which flavor above):
 
@@ -75,14 +76,14 @@ Real-world nuances the table can't capture:
 
 - **Hybrids exist.** A `model.py` can wrap an engine for pre/post-processing; a Chain entrypoint can be a Python class
   while internal Chainlets use engines.
-- **Chain websockets are entrypoint-only.** Intra-chainlet calls only stream output, but bi-di usually not 
-  needed on those edges.
+- **Chain websockets are entrypoint-only.** Intra-chainlet calls only stream output, but bi-di usually not needed on
+  those edges.
 - **Engine performance vs flexibility.** TRT-LLM is the fastest path for many LLMs but its config surface is opaque.
   Worth the trade only when latency/throughput is a real constraint.
 
 ## Routing
 
-**Skill References** (`ls references/` in skill dir, complementary to hosted docs). Be generous to read any of the 
+**Skill References** (`ls references/` in skill dir, complementary to hosted docs). Be generous to read any of the
 included reference files as soon as the user touches on that topic.
 
 - `references/truss-cli.md`: `truss push` / `watch` / iterate. Most-used. Deep dive: `references/truss-config.md`.
@@ -114,9 +115,9 @@ Fabricating numbers from training-data priors burns user trust; logs are the sou
 
 ### Source heterogeneity & drift
 
-Content lives across systems that don't overlap cleanly and drift independently. No single source is 
-perfect/authoritative. For any non-trivial claim ("supported", perf numbers, recommended approach), **triangulate 
-across ≥2 sources**. Surface contradictions to the user; don't paper over.
+Content lives across systems that don't overlap cleanly and drift independently. No single source is
+perfect/authoritative. For any non-trivial claim ("supported", perf numbers, recommended approach), **triangulate across
+≥2 sources**. Surface contradictions to the user; don't paper over.
 
 | Source | Strength | Gap / quirk |
 | --- | --- | --- |
@@ -131,7 +132,7 @@ across ≥2 sources**. Surface contradictions to the user; don't paper over.
   to reach out to Baseten support.
 - Perf numbers found only in a blog → cite as blog claim.
 - Can't find something via docs MCP → fetch `baseten.co/llms.txt` or `docs.baseten.co/llms.txt` as index, then fetch the
-  page directly. Last resprt: websearch.
+  page directly. Last resort: web search.
 
 ### Non-obvious placements within `references/`
 
@@ -142,9 +143,9 @@ across ≥2 sources**. Surface contradictions to the user; don't paper over.
 
 ### Tool quirks
 
-- Fetch full doc pages via `https://docs.baseten.co/<path>.md` (not docs MCP). Mintlify MCP server has a bug for full 
+- Fetch full doc pages via `https://docs.baseten.co/<path>.md` (not docs MCP). Mintlify MCP server has a bug for full
   pages, ok to use for search, `rg` / `tree` / `find` and `cat`/`head`.
-- `baseten_docs` MCP search is lexical. "speech to text" can rank TTS above STT (because of "speech" hits). 
-  Verify result relevant, try other queries and blog posts if in results are weak.
+- `baseten_docs` MCP search is lexical. "speech to text" can rank TTS above STT (because of "speech" hits). Verify
+  result relevant, try other queries and blog posts if results are weak.
 - `list_library_models` have mostly no useful tags (e.g. modality). Filter by `display_name` / `hf_repo_id` substrings.
 - Blog content is not in the docs MCP. Fetch `baseten.co/llms.txt` and search for relevant posts.

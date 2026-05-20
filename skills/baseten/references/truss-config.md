@@ -7,8 +7,8 @@ hardware, packages, secrets, and (for non-Python flavors) the Docker or engine c
 ## Authoring flavor — pick before writing config
 
 A `config.yaml` does not produce a working deployment on its own; it must be paired with an authoring flavor (Python
-class, custom Docker server, or engine-only). See the "Pick your authoring surface" table in `SKILL.md` for the
-decision tree.
+class, custom Docker server, or engine-only). See the "Pick your authoring surface" table in `SKILL.md` for the decision
+tree.
 
 The authoritative schema is the Pydantic-backed JSON schema in the Truss repo:
 
@@ -119,15 +119,18 @@ asked for fp16). Pin to the variant you actually load, e.g. for SDXL:
 ```yaml
 model_cache:
   - repo_id: stabilityai/stable-diffusion-xl-base-1.0
+    volume_folder: sdxl-base
+    use_volume: true
     allow_patterns: ["*.fp16.safetensors", "*.json", "*.txt"]
 ```
 
-Then in `model.py` / Chainlet code, point `from_pretrained` at the local cache path (skip HF-Hub snapshot lookup) and
-declare the variant explicitly:
+Weights land at `/app/model_cache/<volume_folder>/` inside the container (e.g. `/app/model_cache/sdxl-base/` above; if
+`volume_folder` is omitted Truss derives one from `repo_id` — list the directory at runtime to discover it). Point
+`from_pretrained` at that path (skips the HF-Hub snapshot lookup) and declare the variant explicitly:
 
 ```python
 StableDiffusionXLPipeline.from_pretrained(
-    "/app/model_cache/<volume_folder>",  # not the repo id — avoid HF Hub call
+    "/app/model_cache/sdxl-base",  # local cache path — not the repo id
     torch_dtype=torch.float16, variant="fp16", use_safetensors=True, low_cpu_mem_usage=True,
 )
 ```

@@ -103,12 +103,11 @@ Most of these you'd have to build (poorly) if you wired N Trusses together with 
 - **Binary IO helpers** — Chains can serialize numpy arrays as raw binary instead of base64'd JSON. Saves the ~33%
   base64 overhead on every payload edge (and that's before counting JSON's number-encoding bloat). See
   <https://docs.baseten.co/development/chain/binaryio>.
-- **Structured streaming** — helpers for end-to-end typed streams (`AsyncIterator[Model]`) across Chainlets, not just
-  at the entrypoint. See <https://docs.baseten.co/development/chain/streaming>.
+- **Structured streaming** — helpers for end-to-end typed streams (`AsyncIterator[Model]`) across Chainlets, not just at
+  the entrypoint. See <https://docs.baseten.co/development/chain/streaming>.
 - **Local testability** — `chains.run_local()` runs the whole graph in your process with mocked or real downstream
   Chainlets; you can swap any node for a stub or point it at a separately-deployed test deployment, and exercise the
-  orchestration logic without paying GPU costs. See
-  <https://docs.baseten.co/development/chain/localdev>.
+  orchestration logic without paying GPU costs. See <https://docs.baseten.co/development/chain/localdev>.
 - **Selective watch** — `truss chains push --watch --experimental-watch-chainlets <A>,<B>` patches only the named
   Chainlets, skipping `load()` on heavy siblings. Cuts inner-loop wall time when one Chainlet has slow startup.
 - **Per-Chainlet independence** — autoscaling, instance type, deps, and image rebuild scope are each per-Chainlet, so
@@ -174,12 +173,11 @@ For streaming, binary I/O, and websockets, see:
   image, not the local dev shell.
 - **A Chainlet hosts a real workload, not an HTTP wrapper.** If `run_remote` is essentially
   `await httpx.post(other_endpoint)`, collapse it into the caller — you're paying for a container + autoscaler +
-  cold-start budget to do zero work. Split into Chainlets only where hardware, dependencies, or scaling actually
-  differ.
-- **Batching vs unit-of-work is a tradeoff, not a default.** Calling `run_remote(items: list[T]) -> list[U]` once
-  beats N parallel calls **only when** the underlying model framework batches natively (e.g. diffusers, vLLM) **and**
-  replica count is small. With many autoscaling replicas at low `predict_concurrency`, small unit-of-work calls
-  spread across replicas often win. Measure both; don't assume.
+  cold-start budget to do zero work. Split into Chainlets only where hardware, dependencies, or scaling actually differ.
+- **Batching vs unit-of-work is a tradeoff, not a default.** Calling `run_remote(items: list[T]) -> list[U]` once beats
+  N parallel calls **only when** the underlying model framework batches natively (e.g. diffusers, vLLM) **and** replica
+  count is small. With many autoscaling replicas at low `predict_concurrency`, small unit-of-work calls spread across
+  replicas often win. Measure both; don't assume.
 
 ## Further reading
 
