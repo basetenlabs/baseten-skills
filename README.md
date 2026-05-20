@@ -8,14 +8,20 @@ Instruct AI coding agents to use Baseten effectively - route to the right tools 
 
 ## Skills
 
-- [`baseten`](skills/baseten) - deploying, configuring, calling, and operating models on Baseten. Covers Truss
-  authoring, the `truss` CLI, Chains, environments / rolling deployments, pre-hosted Model APIs, and the inference +
+- [`baseten`](skills/baseten) - deploying, configuring, calling, and operating models on Baseten. Covers deployment
+  authoring, the `truss` CLI, Chains, environments, rolling deployments, pre-hosted Model APIs, and the inference +
   management APIs.
 
 ## Install
 
-Below command performs setup for all common coding harnesses. For interacting with your Baseten workspace, provide an
-API key (you can get it from the [webapp](https://app.baseten.co/settings/api_keys)):
+Below command performs setup for all common coding harnesses.
+
+### Requirements:
+
+* For interacting with your Baseten workspace, provide an API key with management permissions (you can get it from the 
+  [webapp](https://app.baseten.co/settings/api_keys)). We recommend using a purpose-dedicated key so it can be 
+  independently revoked without impacting your other workstreams.
+* Node >= 18
 
 ```bash
 export BASETEN_MCP_KEY=...
@@ -28,7 +34,7 @@ npx skills add basetenlabs/baseten-skills -g -y
 
 `-g` installs it globally on your host and `-y` confirms selection for all detected harnesses. If your harness
 supports env variable interpolation, you may also edit the MCP config file to expand your env vars and set the
-desired key in the shell that starts the agent.
+desired key in the shell that starts the agent. 
 
 The `truss` CLI is separate - needed for pushing models / chains from local code, see
 [CLI docs](https://docs.baseten.co/reference/cli/truss/overview). E.g. if you use pip (similar for other package
@@ -45,7 +51,9 @@ models from your local files) - but the best user experience comes from their co
 
 After installation, most agents require a restart.
 
-Check if the MCP servers connect with `/mcp` or `/mcps` (if not connected, verify the BASETEN_MCP_KEY in the harness config file).
+Check if the MCP servers connect with `/mcp` or `/mcps` (if not connected, verify the BASETEN_MCP_KEY in the harness 
+config file).
 
-You can start asking any questions or tasks related to Baseten, from chatting about the docs to brainstorming solution approaches, deploying and iterating on models, or managing your
-workspace. Most agents trigger the skill as needed automatically; alternatively you can invoke it with `/baseten`.
+You can start asking any questions or tasks related to Baseten, from chatting about the docs, to brainstorming 
+solution approaches, deploying and iterating on models or managing your workspace. Most agents trigger the skill as 
+needed automatically; alternatively you can invoke it with `/baseten`.

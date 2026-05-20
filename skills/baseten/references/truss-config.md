@@ -6,14 +6,9 @@ hardware, packages, secrets, and (for non-Python flavors) the Docker or engine c
 
 ## Authoring flavor — pick before writing config
 
-A `config.yaml` does not produce a working deployment on its own; it must be paired with one of three authoring flavors.
-Pick by the model, not by habit — `model.py` is the worst default for modern LLMs.
-
-| Flavor | When to pick | Reference |
-| --- | --- | --- |
-| **Python class** (`model.py` with `load` / `predict`) | Custom pre/post-processing, custom architecture, Python in the request path. | `truss-model-py.md` |
-| **Custom Docker server** (`docker_server` block — vLLM, TGI, SGLang, Triton, Ollama, NIM) | An off-the-shelf inference server already does it. Most common path for modern LLMs. | `truss-custom-servers.md` |
-| **Engine-only** (no code; `trt_llm` / BEI / BIS-LLM block in this file) | Standard architecture covered by a Baseten engine. Fastest path; no Python or Docker to maintain. | engines section below |
+A `config.yaml` does not produce a working deployment on its own; it must be paired with an authoring flavor (Python
+class, custom Docker server, or engine-only). See the "Pick your authoring surface" table in `SKILL.md` for the decision
+tree.
 
 The authoritative schema is the Pydantic-backed JSON schema in the Truss repo:
 
@@ -115,6 +110,30 @@ model_cache:
 
 The weights are baked into the image (or a layer) and available on disk when the container starts. Pair with a Hugging
 Face access secret if the repo is gated.
+
+**Multi-variant repos: narrow `allow_patterns`, set `variant` at load.** HF repos for many diffusion / vision models
+ship both fp32 and fp16 (sometimes bf16) copies of the same weights. A naive `allow_patterns: ["*.safetensors"]` pulls
+both — doubles disk and ~doubles `model.load()` time (the loader may pick the fp32 set and you pay for it even when you
+asked for fp16). Pin to the variant you actually load, e.g. for SDXL:
+
+```yaml
+model_cache:
+  - repo_id: stabilityai/stable-diffusion-xl-base-1.0
+    volume_folder: sdxl-base
+    use_volume: true
+    allow_patterns: ["*.fp16.safetensors", "*.json", "*.txt"]
+```
+
+Weights land at `/app/model_cache/<volume_folder>/` inside the container (e.g. `/app/model_cache/sdxl-base/` above; if
+`volume_folder` is omitted Truss derives one from `repo_id` — list the directory at runtime to discover it). Point
+`from_pretrained` at that path (skips the HF-Hub snapshot lookup) and declare the variant explicitly:
+
+```python
+StableDiffusionXLPipeline.from_pretrained(
+    "/app/model_cache/sdxl-base",  # local cache path — not the repo id
+    torch_dtype=torch.float16, variant="fp16", use_safetensors=True, low_cpu_mem_usage=True,
+)
+```
 
 ## `docker_server` block (custom server flavor)
 

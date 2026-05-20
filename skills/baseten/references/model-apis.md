@@ -17,10 +17,13 @@ https://inference.baseten.co/v1
 Header on every request:
 
 ```
-Authorization: Api-Key $BASETEN_API_KEY
+Authorization: Bearer $BASETEN_API_KEY
 ```
 
-API keys are created at <https://app.baseten.co/settings/account/api_keys>.
+`Bearer` is what the OpenAI SDK sets and what the docs prescribe for MAPI — use it.
+
+API keys are created at <https://app.baseten.co/settings/api_keys>. Inference-scoped keys are sufficient for MAPI calls
+(don't grant management scope for end-user inference clients).
 
 Model APIs require the specific model to be **enabled** in the workspace from <https://app.baseten.co/model-apis/create>
 before it can be called. A 404 on the model slug usually means the model is valid but not enabled in this workspace.
@@ -91,7 +94,7 @@ Current per-model support matrix is at <https://docs.baseten.co/inference/model-
 
 ```
 curl https://inference.baseten.co/v1/models \
-  -H "Authorization: Api-Key $BASETEN_API_KEY"
+  -H "Authorization: Bearer $BASETEN_API_KEY"
 ```
 
 Returns current slugs with metadata (context lengths, pricing, features).
@@ -120,8 +123,9 @@ Standard HTTP:
 - **The base URL differs from custom deployments.** Model APIs live at `inference.baseten.co`; custom deployments live
   at `model-{id}.api.baseten.co`. Swapping one for the other will fail.
 - **The `model=` field is meaningful here.** It picks the model. (On custom deployments it is a placeholder.)
-- **Auth header is `Authorization: Api-Key <key>`, not `Bearer <key>`.** OpenAI SDK handles this automatically;
-  hand-rolled HTTP must use the `Api-Key` prefix.
+- **Auth scheme differs by endpoint.** MAPI (OpenAI-compatible, this file) uses `Authorization: Bearer …`.
+  Custom-deployment endpoints (`model-{id}.api.baseten.co`, see `inference-api.md`) use `Authorization: Api-Key …`.
+  Don't generalize one to the other.
 - **Prefix caching is on by default.** Requests sharing a prefix with a recent request will see cache behavior; see the
   pricing docs for how that maps to billing.
 
