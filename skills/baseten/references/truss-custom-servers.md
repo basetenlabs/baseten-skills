@@ -7,6 +7,8 @@ the user needs; it is often the most popular path for modern LLM deployments.
 A custom-server Truss has no `model.py`. The `config.yaml` declares a `base_image` and a `docker_server` block; Truss
 builds (or, with `no_build`, ships verbatim) and Baseten runs the resulting image.
 
+**Prerequisites:** `truss-config.md` (the `docker_server` block lives there).
+
 ## The `docker_server` block
 
 ```yaml

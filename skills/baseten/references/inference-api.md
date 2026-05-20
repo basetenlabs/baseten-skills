@@ -7,6 +7,9 @@ deployments**: models and chains the user packaged with Truss and deployed to th
 - OpenAPI spec (authoritative): <https://api.baseten.co/inference-spec>
 - Reference overview: <https://docs.baseten.co/reference/inference-api/overview>
 
+**Prerequisites:** `deployment-lifecycle.md` (deployments, environments, dev vs published — route paths reflect these
+concepts).
+
 ## Authentication
 
 Every request sends an `Authorization: Api-Key $BASETEN_API_KEY` header. API keys are created at

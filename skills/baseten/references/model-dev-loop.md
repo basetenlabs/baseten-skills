@@ -1,112 +1,94 @@
 # Iterating on a deployment
 
-How to evolve a Truss model or Chain after the first deploy. Covers `truss push` vs `--watch` vs `--watch-hot-reload`,
-when each is admissible, and how the agent loop differs from the human watch loop the CLI was originally designed for.
+Agent-flavored notes for post-first-deploy iteration on a Truss model or Chain. Conceptual model and feature reference
+live in the docs — this file covers what the docs don't: the agent-specific watcher recipe and exact log markers.
 
-For flag-level reference see `truss-cli.md` (Trusses) and `truss-chains.md` (Chains). This file is the workflow layer
-above those.
+**Prerequisites:** `deployment-lifecycle.md` (especially dev vs published — `--watch` only patches a dev deployment);
+`truss-cli.md` (flag reference for `truss push` / `truss watch`); `truss-chains.md` if iterating on a Chain.
 
-## The three cost tiers
+Docs: <https://docs.baseten.co/development/model/deploy-and-iterate> (general),
+<https://docs.baseten.co/development/chain/localdev> (Chains local dev).
 
-Every change to a Truss/Chain falls into one of three tiers. Pick the cheapest valid tier for the change.
+## Three cost tiers — pick the cheapest valid one
 
-| Tier | What runs | Wall time (typical) | Triggered by |
+| Tier | What runs | Wall time | Triggered by |
 | --- | --- | --- | --- |
-| **Image rebuild** | Docker build, push, deploy, `load()` | minutes (3-10) | any `config.yaml` / `RemoteConfig` change: `system_packages`, `requirements`, `python_version`, `base_image`, `build_commands`, `docker_image`, `compute` |
-| **Live patch + reload** | File sync into container, server restart, `load()` re-runs | seconds (10-60) | any change to `model.py`, packages dir, or Chainlet `run_remote` / `__init__` |
-| **Hot-reload (Trusses only)** | In-process Model class swap; weights and caches preserved; `__init__` / `load` do **not** re-run | sub-second to ~2s | changes to `predict()` only, on a dev deployment started with `--watch-hot-reload` |
+| **Image rebuild** | Docker build + push + deploy + `load()` | minutes (3-10) | a small set of unpatchable config keys: `python_version`, `resources` (compute/instance type), `live_reload`. The watcher detects and refuses these — see "When to drop the watcher" below. |
+| **Live patch + reload** | File sync, server restart, `load()` re-runs | seconds (10-60) | everything else: `model.py` / Chainlet code, `requirements`, `system_packages`, env vars, `external_data`, `model_metadata`, `build_commands`, data dir, bundled packages |
+| **Hot-reload** (Trusses only) | In-process class swap; `__init__` / `load` do **not** re-run | sub-second to ~2s | `predict()`-only changes, dev deployment started with `--watch-hot-reload` |
 
-Chains have tiers 1 and 2 only. There is no hot-reload for Chainlets — `truss chains push --watch` does live patches;
-there is no equivalent of `--watch-hot-reload`.
+Chains have tiers 1 and 2 only; no hot-reload.
 
-## Robust baseline recipe
+## Watcher recipe for agents
 
-Conservative, always-correct, then refine for speed.
+`--watch` was built for humans saving files in an IDE. An agent edits in discrete bursts and knows when it is ready to
+test. Truss has no one-shot `truss patch` verb — patches only happen as a side effect of `truss [chains] push --watch`.
+The robust pattern for an agent is **one watcher per edit**: start the watcher, wait for the patch marker, kill it,
+test. Each cycle is self-contained, no long-lived background process for the harness to lose track of, recovery from
+any mid-loop failure is trivial (re-edit, re-run).
 
-1. **Bootstrap** — `truss push` (or `truss chains push`) once to a published deployment. Wait for ACTIVE. Establishes a
-   known-good image with current deps.
-2. **Debug loop** — start a development deployment with `--watch` (no hot-reload). Every edit to model code triggers
-   tier 2 (patch + `load()` re-run). Works for all model.py / Chainlet changes; never wrong.
-3. **Refinement (Trusses only)** — once iteration is narrowed to `predict()` logic and `load()` is expensive (LLMs,
-   large weights), restart the watcher with `--watch-hot-reload`. Drop a version sentinel in `predict()` (e.g.
-   `logger.info("predict v=2026-05-11.3")`) so each iteration confirms the swap took.
-4. **Dep change escape hatch** — if a change touches `config.yaml` / `RemoteConfig`, the watcher cannot help. Stop the
-   watcher, do a full `truss push`, restart the watcher when ACTIVE.
-5. **Publish** — final `truss push` (no `--watch`) so production is a clean cold start, not a patched-on-top-of-patched
-   in-memory state. Then promote to environment / production.
+`--watch` always produces a **development deployment** — mutable, single replica, scales to zero when idle, no
+autoscaling, one per model. Live patching is only possible against this slot, never against a published deployment.
+See `deployment-lifecycle.md` for the full dev-vs-published distinction.
 
-## Agent vs human loop
+Per edit (adapt to your harness — Bash, Python job control, etc.):
 
-The CLI's `--watch` was designed for a human editor: continuous FS watching is convenient when a person saves a file
-every few seconds in an IDE. An agent edits in discrete bursts and _knows_ when it is ready to test. Two implications:
+```bash
+# 1. Edit the file (atomic write — most editor/agent tools already do this).
 
-1. **Discrete patches would be cleaner than continuous watch.** Truss does not currently expose a one-shot `truss patch`
-   verb — patches happen only as a side effect of `truss watch` / `truss chains push --watch`. The available primitive
-   is "start the watcher, let your discrete edits flow through it, stop it when done."
-2. **The natural Claude Code shape** for the debug loop is:
-   - `Bash run_in_background` launches `truss watch --tail [--hot-reload]` (or `truss chains push --watch` with
-     `--include-git-info` etc.). Output redirected to a log file. One backgrounded process owns the watch.
-   - `Monitor` tails the log file with a grep filtered to terminal markers:
-     `"Completed model.load|patched|sync|Exception|Traceback|FAILED|Replica terminated"`. One notification per outcome —
-     keep filter alternation covering failures too (see Monitor coverage rule).
-   - Each `Edit` to model code → debounced FS event → watcher patches → Monitor fires with success or failure.
-   - `TaskStop` kills the watcher when debugging is done.
-3. **Edit atomicity matters.** The Edit tool writes atomically (write-temp + rename), so the watcher sees one coherent
-   event per Edit. Multiple Edits in quick succession may collapse into one patch (usually fine; if it matters, wait for
-   the Monitor event between edits).
+# 2. Start the watcher in the background, fresh log per cycle.
+truss chains push --watch --remote <name> chain.py > /tmp/watch.log 2>&1 &
+WATCH_PID=$!
+# Single Truss:  truss watch --remote <name> > /tmp/watch.log 2>&1 &
 
-## Hot-reload admissibility (Trusses only)
+# 3. Wait for the patch marker (see "Log markers" below for the alternatives).
+while sleep 2; do
+  grep -qE 'Patched Chainlet|Failed to patch|patched successfully' /tmp/watch.log && break
+done
 
-`--watch-hot-reload` swaps the **Model class** in-process without re-running `__init__` or `load`. Faster, but narrower
-applicability. Use it when **all** of these hold:
+# 4. Kill the watcher; the next edit gets a fresh one.
+kill "$WATCH_PID" 2>/dev/null
 
-- Only `predict()` (or methods called from it) changed.
-- No change to imports already resolved in the live process. Hot-reload swaps the class, not module globals —
-  re-imported modules may still bind to the old version.
-- No new state needs to be set up in `load()`. New tensors, file handles, opened sockets, downloaded files — none of
-  these will appear.
-- Not debugging cold-start behavior. Hot-reload defeats the purpose.
-- No stateful resources need teardown (GPU memory leaks, file handle exhaustion). The old class instance and any
-  references it owns persist until GC.
+# 5. Test the dev endpoint with a foreground call. On failure, fetch chainlet /
+#    deployment logs via the MCP / management API — don't guess.
+```
 
-When in doubt, drop `--watch-hot-reload`. Tier 2 (patch + reload) is 10-60s — annoying, not catastrophic.
+The watcher's ~5-15s of startup per cycle is in the noise next to the tier-2 patch wait (10-60s) and the test call.
+Trading that for the robustness of stateless cycles is worth it.
 
-**Version sentinel pattern.** Always include something like `logger.info(f"predict version={VERSION}")` and bump
-`VERSION` on each edit. Without it, a silent hot-reload no-op (e.g. due to module caching) is indistinguishable from a
-successful swap.
+### Log markers (from truss source)
 
-## Chains specifics
+| Surface | Success | No-op | Failure | Cycle done |
+| --- | --- | --- | --- | --- |
+| Chain | `✅ Patched Chainlet \`<name>\`.` | `💤 Nothing to do for Chainlet \`<name>\`.` | `❌ Failed to patch Chainlet \`<name>\`.` | `👀 Watching for new changes.` |
+| Truss | `Model <name> patched successfully.` | (silent skip) | `Failed to patch. ...` / `Patch failed: ...` | (rely on success/failure line) |
 
-- Chains use `truss chains push [--watch]` instead of `truss push`. Same tier-1 / tier-2 model; no tier 3.
-- `--experimental-watch-chainlets <name,...>` restricts patching to specific Chainlets — useful when one Chainlet has a
-  slow `load()` and you are iterating on another. Treat as experimental; not a substitute for stable workflow.
-- **Each Chainlet is independent** for rebuild purposes. Changing one Chainlet's `RemoteConfig` only rebuilds that
-  Chainlet's image. Use this to keep iteration cost down: stabilize heavy Chainlets first, then iterate on lighter ones.
-- **No rolling deployments for Chains.** A new published deploy is a hard cutover. Plan accordingly when promoting from
-  the dev-watch deployment to production.
-- **`Heavy-dependency imports inside Chainlet methods** (not module top) means the local watcher does not need GPU
-  libraries to run. Standard Chains idiom; keep doing it.
+### Useful flags
+
+- **`truss chains push --watch --experimental-watch-chainlets <Name1>,<Name2>`** — restrict patching to specific
+  Chainlets. Useful when iterating on a sibling of a heavy-`load()` Chainlet.
+- **`truss push --watch --watch-hot-reload`** (Trusses only) — swap the Model class in-process without re-running
+  `__init__`/`load`. Faster, but only valid when **all** of: only `predict()` changed; no new module-level imports; no
+  new state in `load()`; not debugging cold start. When unsure, drop the flag. Pair with a `VERSION` sentinel logged
+  from `predict()` so silent no-op swaps are detectable.
+
+### When to drop the watcher
+
+The watcher cannot rebuild the image. If your change touches one of the unpatchable keys
+(`python_version`, `resources`, `live_reload`), or if the log shows `Patching is not supported for: <key>` /
+`Failed to calculate patch. Change type might not be supported.`: do a one-shot plain `truss [chains] push` (no
+`--watch`, exits when upload completes), poll deployment status until `ACTIVE`, then resume the one-shot watcher recipe.
+Don't enumerate every "is this patchable?" up front — try the patch, fall back on the warning.
+
+## Publish step
+
+After iteration: do one clean `truss [chains] push` without `--watch` so production starts from a fresh image, not a
+patched-on-top-of-patched dev state. Then promote to the target environment.
 
 ## Gotchas
 
-- **Watch keeps the dev deployment warm** — no scale-to-zero while watching. Stop the watcher when not iterating, or
-  accept the cost.
-- **Watch breaks on `config.yaml` / `RemoteConfig` changes.** The watcher cannot perform a tier-1 rebuild. Stop it,
-  push, restart it.
-- **Hot-reload silently failing to apply.** The version-sentinel pattern is the only reliable defense — don't assume the
-  swap took.
-- **Final push before publish.** Production deploys should start from a clean image, not a watched dev deployment
-  patched 47 times. Always do a non-watch `truss push` as the publish step.
+- **Watch keeps the dev deployment warm** — no scale-to-zero while watching. Stop it when not iterating.
+- **Atomic edits**: file writes that rename-into-place are seen by the watcher as one FS event. Bursts may collapse
+  into one patch — usually fine; if it matters, wait for the marker between edits.
 - **Multi-remote setups** require `--remote <name>`. If `truss push` errors with "Multiple remotes available," check
   `~/.trussrc`.
-- **Cached truss credentials live in `~/.trussrc`.** Do not scrape it for the API key — set `BASETEN_API_KEY` explicitly
-  or ask the user.
-
-## Further reading
-
-- `truss-cli.md` — flag reference for `truss push` and `truss watch`.
-- `truss-chains.md` — Chainlet model and `truss chains push` reference.
-- Deploy-and-iterate guide: <https://docs.baseten.co/development/model/deploy-and-iterate>
-- Chains local development: <https://docs.baseten.co/development/chain/localdev> — `chains.run_local()` lets you iterate
-  Chainlet logic without a deploy at all; orthogonal to the watch loop but often the right first step for pure-Python
-  logic changes.

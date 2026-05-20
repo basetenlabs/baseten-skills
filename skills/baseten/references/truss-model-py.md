@@ -7,6 +7,8 @@ fit a ready-made HTTP server.
 If an off-the-shelf server (vLLM, TGI, SGLang, Triton) or a Baseten engine (TensorRT-LLM, BEI, BIS-LLM) does the job,
 prefer those instead. See `truss-custom-servers.md` and `truss-config.md` (engines section).
 
+**Prerequisites:** `truss-config.md` (the `model.py` flavor pairs with `config.yaml`).
+
 This skill covers the core contract. Sophisticated streaming patterns, custom batching, and performance tuning of the
 in-process server are intentionally out of scope; consult <https://docs.baseten.co/development/model> and the examples
 repo for those.

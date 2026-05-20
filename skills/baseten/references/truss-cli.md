@@ -6,6 +6,9 @@ The `truss` CLI builds, deploys, and live-patches Trusses. The published referen
 This file covers Truss model commands only. For the `truss chains` subcommand group, see `truss-chains.md`. The
 `truss train` group (Truss Train) is not covered here; see <https://docs.baseten.co/reference/cli/training>.
 
+**Prerequisites:** `truss-config.md` (what's in `config.yaml`); `deployment-lifecycle.md` (default push is published,
+`--watch` makes a dev deployment — the distinction matters).
+
 ## Install
 
 `uv tool install truss` (or `uvx truss <command>` to run without installing); `pip install truss` also works. Respect
@@ -153,8 +156,9 @@ Workspace and account utilities. `whoami` prints the current authenticated user.
   Stop the watch (or accept the cost) accordingly.
 - **`--watch-hot-reload` does not re-run `__init__` or `load`.** If your change relies on new state set up there, do a
   full reload (omit `--watch-hot-reload`) instead.
-- **`.trussrc` holds credentials.** Do not commit it. In CI, prefer `BASETEN_API_KEY` plus `--remote <name>` over
-  committing `.trussrc`.
+- **`.trussrc` holds credentials.** Do not commit it. In CI / scripted flows, prefer `BASETEN_API_KEY` plus
+  `--remote <name>` over committing `.trussrc`. Truss is moving toward OS keyring storage; if asking for a key, ask
+  the user to export it as an env var rather than reading or writing credential files yourself.
 
 ## Further reading
 

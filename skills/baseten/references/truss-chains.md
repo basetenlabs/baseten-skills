@@ -8,6 +8,9 @@ or upscaling steps, retrieval into an LLM.
 Each step in a Chain is a **Chainlet**: a Python class that deploys independently on its own hardware with its own
 autoscaling policy. One Chainlet is marked as the **entrypoint** and handles the Chain's public HTTP surface.
 
+**Prerequisites:** `truss-config.md` (each Chainlet's `RemoteConfig` mirrors `config.yaml`); `deployment-lifecycle.md`
+(dev vs published, per-chainlet autoscaling, environments). For iteration: `truss-cli.md` + `model-dev-loop.md`.
+
 Reference docs live at <https://docs.baseten.co/development/chain/overview> and the CLI reference at
 <https://docs.baseten.co/reference/cli/chains/chains-cli>. For deeper patterns (streaming, binary I/O, error handling,
 subclassing), defer to the docs.
@@ -87,6 +90,32 @@ class PhiLLM(chains.ChainletBase):
 build time, same idea as the `model_cache` block in a classic Truss `config.yaml`. The full API surface is at
 <https://docs.baseten.co/reference/sdk/chains>.
 
+## What Chains gives you (beyond DIY orchestration)
+
+Most of these you'd have to build (poorly) if you wired N Trusses together with `httpx` by hand.
+
+- **Typed IO between Chainlets** — `run_remote` signatures use Pydantic / primitives; mismatches fail at deploy/import
+  time, not at first call in prod. Full IDE autocomplete on dependency calls.
+- **Generated client stubs (`BasetenSession`)** — created from your `chains.depends()` graph. You get rate limiting,
+  HTTP connection reuse + periodic rotation, retries, structured stack-trace propagation from a failing inner Chainlet
+  back to the caller (not "500 Internal Server Error" from a black box), and exported per-edge metrics — all without
+  writing the glue.
+- **Binary IO helpers** — Chains can serialize numpy arrays as raw binary instead of base64'd JSON. Saves the ~33%
+  base64 overhead on every payload edge (and that's before counting JSON's number-encoding bloat). See
+  <https://docs.baseten.co/development/chain/binaryio>.
+- **Structured streaming** — helpers for end-to-end typed streams (`AsyncIterator[Model]`) across Chainlets, not just
+  at the entrypoint. See <https://docs.baseten.co/development/chain/streaming>.
+- **Local testability** — `chains.run_local()` runs the whole graph in your process with mocked or real downstream
+  Chainlets; you can swap any node for a stub or point it at a separately-deployed test deployment, and exercise the
+  orchestration logic without paying GPU costs. See
+  <https://docs.baseten.co/development/chain/localdev>.
+- **Selective watch** — `truss chains push --watch --experimental-watch-chainlets <A>,<B>` patches only the named
+  Chainlets, skipping `load()` on heavy siblings. Cuts inner-loop wall time when one Chainlet has slow startup.
+- **Per-Chainlet independence** — autoscaling, instance type, deps, and image rebuild scope are each per-Chainlet, so
+  one slow node doesn't gate the rest.
+
+Broader context: <https://www.baseten.co/blog/baseten-chains-explained/>.
+
 ## Heavy-dependency imports
 
 Imports of Chainlet-specific packages (e.g. `torch`, `transformers`) commonly live **inside** `__init__` or `run_remote`
@@ -143,6 +172,14 @@ For streaming, binary I/O, and websockets, see:
 - **Local imports of heavy dependencies** (`torch`, `transformers`, etc.) inside `__init__` or `run_remote` are
   idiomatic for Chains even though they contradict the general "imports at top" rule - those libs live in the remote
   image, not the local dev shell.
+- **A Chainlet hosts a real workload, not an HTTP wrapper.** If `run_remote` is essentially
+  `await httpx.post(other_endpoint)`, collapse it into the caller — you're paying for a container + autoscaler +
+  cold-start budget to do zero work. Split into Chainlets only where hardware, dependencies, or scaling actually
+  differ.
+- **Batching vs unit-of-work is a tradeoff, not a default.** Calling `run_remote(items: list[T]) -> list[U]` once
+  beats N parallel calls **only when** the underlying model framework batches natively (e.g. diffusers, vLLM) **and**
+  replica count is small. With many autoscaling replicas at low `predict_concurrency`, small unit-of-work calls
+  spread across replicas often win. Measure both; don't assume.
 
 ## Further reading
 
@@ -155,3 +192,4 @@ For streaming, binary I/O, and websockets, see:
 - Local development: <https://docs.baseten.co/development/chain/localdev>
 - Example Chains (audio transcription, RAG): <https://docs.baseten.co/examples/chains-audio-transcription> and
   <https://docs.baseten.co/examples/chains-build-rag>
+- Blog (design rationale): <https://www.baseten.co/blog/baseten-chains-explained/>
