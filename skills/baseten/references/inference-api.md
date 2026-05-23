@@ -50,13 +50,14 @@ Sync: one `httpx.Client` created at app startup, closed on shutdown. Async: one 
 lifespan). Set `headers` on the client so every call inherits `Authorization: Api-Key …`.
 
 ```python
+import os
 import httpx
 
 client = httpx.Client(
-    headers={"Authorization": f"Api-Key {api_key}"},
+    headers={"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"},
     timeout=60.0,
 )
-# client.post(url, json=payload) for each call; client.aclose() / client.close() on shutdown
+# client.post(url, json=payload) for each call; client.close() on shutdown
 ```
 
 ### OpenAI SDK
