@@ -36,6 +36,7 @@ Use the official OpenAI SDK pointed at the Baseten base URL:
 import os
 from openai import OpenAI
 
+# Reuse this client for all calls in the process (do not construct per request).
 client = OpenAI(
     base_url="https://inference.baseten.co/v1",
     api_key=os.environ["BASETEN_API_KEY"],
@@ -53,6 +54,11 @@ print(response.choices[0].message.content)
 
 Substitute any enabled model slug for the `model=` argument. Unlike the custom-deployment sync endpoint (where `model=`
 is a placeholder), **on Model APIs the `model=` field actively selects which model serves the request** - get it right.
+
+Create the `OpenAI` client once per process (module scope, app singleton, or dependency injection) and reuse it for
+every `chat.completions.create` call. The SDK pools HTTP connections via `httpx` under the hood; constructing a new
+`OpenAI()` per request discards that pooling and adds TLS handshake latency on each call. For `requests` or `httpx`
+against custom deployments, see **Connection reuse** in `inference-api.md`.
 
 ## Streaming
 
@@ -128,6 +134,8 @@ Standard HTTP:
   Don't generalize one to the other.
 - **Prefix caching is on by default.** Requests sharing a prefix with a recent request will see cache behavior; see the
   pricing docs for how that maps to billing.
+- **Reuse the OpenAI client.** A new `OpenAI()` per request loses connection pooling; keep one client per process for
+  agents and high-QPS loops.
 
 ## Further reading
 

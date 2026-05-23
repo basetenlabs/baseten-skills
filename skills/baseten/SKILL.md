@@ -93,7 +93,8 @@ included reference files as soon as the user touches on that topic.
 - `references/truss-chains.md`: multi-step pipelines (RAG, ASR→LLM→TTS, chunked audio/video) with per-step HW +
   autoscaling.
 - `references/model-apis.md`: shared pre-hosted endpoints (DeepSeek, GLM, Kimi, ...). Fastest when one fits.
-- `references/inference-api.md`: calling **custom** deployments. async / streaming / wake / OpenAI-compat sync routes.
+- `references/inference-api.md`: calling **custom** deployments. connection reuse (`requests` / `httpx` / OpenAI SDK),
+  async / streaming / wake / OpenAI-compat sync routes.
 - `references/management-api.md`: programmatic control plane (models, deployments, envs, secrets). What `truss` CLI uses
   under the hood.
 - `references/deployment-lifecycle.md`: Model / Deployment / Environment semantics + promotion + autoscaling.
