@@ -1,0 +1,19 @@
+{
+  "name": "baseten-skills evals",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // Codespace idle timer keys on user-side input (terminal/port-forward), NOT on
+  // running compute. Max is 240 min — needed for unattended sweeps.
+  "idleTimeoutMinutes": 240,
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb"
+  }
+}

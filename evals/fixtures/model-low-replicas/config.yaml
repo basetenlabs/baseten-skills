@@ -1,0 +1,11 @@
+model_name: polite-axolotl
+python_version: py311
+resources:
+  cpu: '1'
+  memory: 2Gi
+  use_gpu: false
+runtime:
+  predict_concurrency: 1
+# Autoscaling baseline (min=0, max=1, concurrency_target=1) is set on the
+# production deployment AFTER push via the management API. See
+# bin/provision_fixtures.sh.

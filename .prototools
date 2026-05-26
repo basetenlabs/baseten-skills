@@ -1,0 +1,6 @@
+python = "3.12.10"
+uv = "0.10.0"
+
+[settings]
+detect-strategy = "only-prototools"
+auto-install = true

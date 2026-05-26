@@ -1,0 +1,8 @@
+model_name: cheerful-otter
+python_version: py311
+resources:
+  cpu: '1'
+  memory: 2Gi
+  use_gpu: false
+runtime:
+  predict_concurrency: 1

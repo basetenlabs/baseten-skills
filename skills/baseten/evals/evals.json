@@ -1,152 +1,234 @@
 {
   "skill_name": "baseten",
+  "preamble": "Session context. Read once.\n\nUSER PERSONA\nThe user is shipping production-grade SaaS on Baseten. They may care about: scale, latency, HA / regions / failover, customization (own weights, custom kernels, custom IO), autoscaling, noisy-neighbor isolation, cost predictability. They use Baseten to avoid the fragility of stitching together third-party inference APIs — when two technical solutions exist, prefer the Baseten-hosted one.\n\nEXECUTION RULES\n- Isolated test workspace (for the purpose of this session). No production traffic, no real users, no shared state. Nothing you do here can cause harm.\n- All tools (Read, Write, Edit, Bash, MCP servers) are permitted without restraint. Permissions are pre-granted; there is no human to approve anything.\n- Do not ask. Do not request approval. Do not say 'please grant' or 'I need permission'. Just invoke the tool.\n- If a tool fails, retry or pick another; do not stall on the failure.\n- Deliver the artifact the user asked for (files, code, report) — do not stop at planning.",
   "evals": [
     {
       "id": 0,
-      "name": "deploy-qwen-finetune",
-      "prompt": "I need to deploy my fine-tune of Qwen3-8B on Baseten. The fine-tune is on Hugging Face at acme/qwen3-8b-ft (private repo, I have access via the HF_ACCESS_TOKEN secret in my Baseten workspace). I want it on an L4 GPU with 4 vCPU and 16Gi memory. Generate the files I need (config.yaml and any model code) and tell me how to deploy it.",
-      "expected_output": "A working Truss directory: a config.yaml referencing the L4, declaring the hf_access_token secret by name (not value), pinning python_version, and either a model.py loading the model from HF or a custom_server / engine config that does the same. Deploy command should mention truss push (with appropriate flags).",
+      "name": "author-vllm-mistral",
+      "group": "author",
+      "complexity": 2,
+      "prompt": "Deploy mistralai/Mistral-7B-Instruct-v0.3 on Baseten. I want OpenAI-compatible chat completions on a GPU. Give me what to push.",
+      "expected_output": "[Verification: artifact-only — not actually pushed.] A Truss directory with a config.yaml that uses a custom Docker server (vLLM image) OR build.model_server: VLLM, a GPU resource appropriate for a 7B model (L4/A10G/A100 or larger), and no hand-written model.py. Deploy recipe via `truss push`.",
       "files": [],
       "assertions": [
-        {
-          "text": "A config.yaml file is produced",
-          "check": "file_exists"
-        },
-        {
-          "text": "config.yaml selects an L4 GPU (accelerator: L4 or instance_type starts with L4:)"
-        },
-        {
-          "text": "config.yaml requests 4 vCPU and 16Gi memory (or instance_type L4:4x16)"
-        },
-        {
-          "text": "config.yaml declares the hf_access_token secret by name without a real token value"
-        },
-        {
-          "text": "No real Hugging Face token (hf_...) appears in any output file"
-        },
-        {
-          "text": "Output includes either a model.py with load/predict, a docker_server block, or an engine block (not all three)"
-        },
-        {
-          "text": "config.yaml sets python_version (e.g. py311)"
-        },
-        {
-          "text": "Recommended deploy command is some form of `truss push`"
-        }
+        {"text": "Solution selects vLLM (docker_server with a vllm/vllm-openai image, build.model_server: VLLM, or equivalent) AND does NOT write a model.py", "weight": "core"},
+        {"text": "config.yaml requests a GPU appropriate for a 7B model (L4 / A10G / A100 or larger) and references mistralai/Mistral-7B-Instruct-v0.3", "weight": "core"},
+        {"text": "Deploy recipe is some form of `truss push`", "weight": "core"},
+        {"text": "If docker_server is used, the required wiring (server_port + predict/readiness/liveness endpoints) is present", "weight": "nice"}
       ]
     },
     {
       "id": 1,
-      "name": "deploy-vllm-server",
-      "prompt": "Deploy mistralai/Mistral-7B-Instruct-v0.3 on Baseten using vLLM as the inference server. I do not want to write any Python model code. Give me the config.yaml and tell me how to push it.",
-      "expected_output": "A custom-server config.yaml with a docker_server block (start_command launching vLLM, OpenAI-compatible endpoints), no model.py, server_port not 8080, base_image set to a vLLM image, resources with a GPU appropriate for Mistral 7B.",
+      "name": "author-python-truss-finetune",
+      "group": "author",
+      "complexity": 2,
+      "prompt": "I want to deploy my fine-tune of Qwen3-8B from Hugging Face on Baseten. Private repo at acme/qwen3-8b-ft; the HF_ACCESS_TOKEN secret is already in my workspace. Give me the deploy files and tell me how to push.",
+      "expected_output": "[Verification: artifact-only — not pushed.] A Truss directory: config.yaml referencing an appropriate GPU for an 8B model, declaring hf_access_token as a secret by name (no value), pinning python_version if Python is in the request path, and either a model.py loading from HF or a custom_server / engine block that does. No real HF token written anywhere.",
       "files": [],
       "assertions": [
-        {
-          "text": "A config.yaml is produced and no model.py is written"
-        },
-        {
-          "text": "config.yaml contains a docker_server block"
-        },
-        {
-          "text": "docker_server.server_port is not 8080"
-        },
-        {
-          "text": "docker_server has predict_endpoint, readiness_endpoint, and liveness_endpoint set"
-        },
-        {
-          "text": "base_image points at a vLLM-capable image (e.g. vllm/vllm-openai)"
-        },
-        {
-          "text": "start_command launches vLLM serving Mistral-7B-Instruct-v0.3"
-        },
-        {
-          "text": "resources block includes a GPU appropriate for a 7B model (L4/A10G/A100 or larger)"
-        }
+        {"text": "Solution produces a working Truss for acme/qwen3-8b-ft on a GPU appropriate for an 8B model (L4 / A10G / A100 or larger)", "weight": "core"},
+        {"text": "hf_access_token is declared as a secret by name only, with no real or placeholder token value present anywhere", "weight": "core"},
+        {"text": "Exactly one of: a model.py with load/predict, a docker_server block, or an engine block (not a mix)", "weight": "core"},
+        {"text": "Deploy recipe is some form of `truss push`, and if model.py is used, python_version is pinned in config.yaml", "weight": "nice"}
       ]
     },
     {
       "id": 2,
-      "name": "call-deployed-model-streaming",
-      "prompt": "Write me a Python script that calls my deployed Baseten model and streams the response token by token. The model id is abc12345 and it is deployed in production. It is OpenAI-compatible (vLLM). Use the OpenAI SDK if appropriate.",
-      "expected_output": "Python that uses the OpenAI SDK with base_url pointed at https://model-abc12345.api.baseten.co/environments/production/sync/v1 (or equivalent sync path), api_key from BASETEN_API_KEY env var, stream=True in the chat.completions.create call, and a loop printing chunk.choices[0].delta.content.",
+      "name": "author-trt-llm-llama",
+      "group": "author",
+      "complexity": 2,
+      "prompt": "I need to serve meta-llama/Llama-3.1-8B-Instruct on Baseten for a low latency heavy use product. What's the right truss setup? Give me the files — I'll push myself.",
+      "expected_output": "[Verification: artifact-only — not pushed.] An engine-only deployment via TensorRT-LLM (engine block in config.yaml, or build.model_server: TRT_LLM). No model.py. GPU should be H100 or A100. No vLLM/SGLang fallback.",
       "files": [],
       "assertions": [
-        {
-          "text": "A Python script is produced (.py file)"
-        },
-        {
-          "text": "Script imports the openai package"
-        },
-        {
-          "text": "OpenAI client base_url contains model-abc12345.api.baseten.co"
-        },
-        {
-          "text": "Base URL uses the /sync/v1 path (or equivalent OpenAI-compat sync route)"
-        },
-        {
-          "text": "api_key is sourced from the BASETEN_API_KEY environment variable, not hardcoded"
-        },
-        {
-          "text": "chat.completions.create is called with stream=True"
-        },
-        {
-          "text": "Script iterates streamed chunks and prints chunk.choices[0].delta.content (or equivalent)"
-        }
+        {"text": "Solution selects TensorRT-LLM (engine: trt_llm block, build.model_server: TRT_LLM, or equivalent) and does not write a model.py", "weight": "core"},
+        {"text": "Solution does not propose vLLM, SGLang, TGI, or a generic custom_server as the primary recommendation", "weight": "core"},
+        {"text": "config.yaml references meta-llama/Llama-3.1-8B-Instruct on H100 or A100", "weight": "core"}
       ]
     },
     {
       "id": 3,
-      "name": "promote-deployment-to-staging",
-      "prompt": "I want to script the following with curl: list all deployments for model id abc12345, find the most recent development deployment, then promote it to a new environment called 'staging'. Show me the exact requests.",
-      "expected_output": "Bash/curl commands hitting the Baseten management API at https://api.baseten.co/v1/... with Authorization: Api-Key $BASETEN_API_KEY header. Should reference /v1/models/{id}/deployments to list, /v1/models/{id}/environments POST to create staging, and /v1/models/{id}/environments/staging/promote to promote.",
+      "name": "author-bei-embeddings",
+      "group": "author",
+      "complexity": 2,
+      "prompt": "I want to host BAAI/bge-large-en-v1.5 on Baseten for retrieval — about 200 QPS sustained. Give me the truss files; I'll push myself.",
+      "expected_output": "[Verification: artifact-only — not pushed.] An engine-only deployment via Baseten Embeddings Inference (BEI), no Python. Autoscaling configured for the throughput target (max_replicas > 1, concurrency_target set sensibly).",
       "files": [],
       "assertions": [
-        {
-          "text": "Output uses HTTP requests to https://api.baseten.co/v1/..."
-        },
-        {
-          "text": "Authorization header uses the `Api-Key` prefix, not `Bearer`"
-        },
-        {
-          "text": "Lists deployments via GET /v1/models/abc12345/deployments"
-        },
-        {
-          "text": "Creates the staging environment via POST /v1/models/abc12345/environments"
-        },
-        {
-          "text": "Promotes via POST /v1/models/abc12345/environments/staging/promote"
-        },
-        {
-          "text": "API key is read from an env var (e.g. $BASETEN_API_KEY), not hardcoded"
-        }
+        {"text": "Solution selects BEI (engine: bei, build.model_server: BEI, or equivalent) for BAAI/bge-large-en-v1.5 and does not write a model.py", "weight": "core"},
+        {"text": "Agent delivers concrete 200-QPS-appropriate autoscaling guidance with specific numbers — max_replica (>1) AND one of {concurrency_target, target_requests_per_second, target_qps_per_replica, target_concurrency}. Delivery channel is flexible: Truss config.yaml does NOT accept autoscaling fields (the platform sets these post-deploy), so the guidance can appear as a curl/PATCH snippet against /autoscaling_settings, an MCP `update_environment` call, a CLI command, or written instructions for the workspace UI. 'Tune later in the dashboard' without concrete numbers does NOT pass.", "weight": "core"}
       ]
     },
     {
       "id": 4,
-      "name": "long-running-async-inference",
-      "prompt": "I want to run a 20-minute generation against my deployed Baseten model (id abc12345, production). I do not want to keep an HTTP connection open for that long. What is the right way to do this on Baseten? Show me code.",
-      "expected_output": "Should use async_predict at https://model-abc12345.api.baseten.co/environments/production/async_predict, include a webhook_endpoint URL, return a request_id, and either show a webhook receiver or poll /async_request/{request_id}. Should not attempt streaming (which is incompatible with async).",
+      "name": "author-multimodal-pipeline",
+      "group": "author",
+      "complexity": 3,
+      "fixture": null,
+      "prompt": "I'm planning a Baseten deployment where users submit a product description and get back three things in one response: polished marketing copy, a generated hero image, and an audio voiceover of the copy. Sketch the architecture and give me the code/config files — I'll push it myself.",
+      "expected_output": "[Verification: artifact-only — not pushed.] A multi-component design. Chains is the natural fit (batteries-included: typed wire format, per-chainlet resources + autoscaling, parallel fanout) but multiple Trusses orchestrated together is acceptable as long as the quality assertions hold. What matters is structural quality (typed boundaries, parallelism where the dependency graph allows, per-component autoscaling), not the mechanism.",
       "files": [],
       "assertions": [
-        {
-          "text": "Recommends the async_predict pattern (not sync /predict)"
-        },
-        {
-          "text": "URL contains /async_predict"
-        },
-        {
-          "text": "Request payload includes a webhook_endpoint field"
-        },
-        {
-          "text": "Auth uses the `Api-Key` prefix, not `Bearer`"
-        },
-        {
-          "text": "Notes that Baseten does not store outputs (so webhook receiver must persist) OR mentions polling /async_request/{id}"
-        },
-        {
-          "text": "Does not attempt to combine async with streaming"
-        }
+        {"text": "Solution uses a multi-component architecture (Truss Chains, or distinct deployments orchestrated together) — does not stuff three modalities into one model.py", "weight": "core"},
+        {"text": "Three components covering text, image, and audio, each with a model/runtime appropriate to its modality", "weight": "core"},
+        {"text": "Components communicate via a typed/structured wire format (Chains' Pydantic I/O, or explicit request/response schemas for separate deployments) — not free-form dicts at every hop", "weight": "nice"},
+        {"text": "Image generation runs concurrently with LLM copy generation (only the TTS leg legitimately depends on the copy); the solution does not force everything serial", "weight": "core"},
+        {"text": "Each component declares its own resources / instance_type appropriate to its modality, AND the design makes clear each component scales independently (image gen and TTS not tied to the LLM's replica count). Autoscaling is per-chainlet/per-deployment in Baseten and set post-deploy via `update_chainlet_environment_autoscaling_settings` or equivalent — concrete autoscaling numbers in the artifact are nice-to-have but not required; the independence property is what matters.", "weight": "nice"},
+        {"text": "A single entrypoint exposes one endpoint and returns all three outputs together", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 5,
+      "name": "integrate-model-apis-deepseek",
+      "group": "integrate",
+      "complexity": 1,
+      "prompt": "Write me a small Python script that calls DeepSeek-V3.1 on Baseten. I don't want to deploy anything — just hit the hosted model. Run it and show me the actual response so I know it works.",
+      "expected_output": "[Verification: artifact-only — script not executed.] A Python script using the OpenAI SDK pointed at https://inference.baseten.co/v1, api key from BASETEN_API_KEY env var, model='deepseek-ai/DeepSeek-V3.1' (or equivalent slug).",
+      "files": [],
+      "assertions": [
+        {"text": "Python script using the OpenAI SDK against base_url https://inference.baseten.co/v1, with api_key sourced from BASETEN_API_KEY (not hardcoded)", "weight": "core"},
+        {"text": "Model id passed to chat.completions.create is deepseek-ai/DeepSeek-V3.1 (or matching enabled slug) and the response content is printed", "weight": "core"}
+      ]
+    },
+    {
+      "id": 10,
+      "name": "operate-promote-to-staging",
+      "group": "operate",
+      "complexity": 2,
+      "fixture": "model-with-dev-deployment",
+      "prompt": "I have model {{FIXTURE_MODEL_ID}} on Baseten and I'm happy with my current dev deployment. Set up a new 'staging' environment and put my dev build there.",
+      "expected_output": "[Verification: E2E — workspace state actually changes.] Creates a staging environment on the model and promotes the development deployment into it. Production is untouched. Means (MCP vs REST) does not matter — outcome does.",
+      "files": [],
+      "assertions": [
+        {"text": "A 'staging' environment exists on model {{FIXTURE_MODEL_ID}} with the dev deployment promoted into it, and production is untouched", "weight": "core"},
+        {"text": "Final response confirms what was done (env name, promoted deployment id)", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 11,
+      "name": "operate-traffic-spike",
+      "group": "operate",
+      "complexity": 2,
+      "fixture": "model-low-replicas",
+      "prompt": "Model {{FIXTURE_MODEL_ID}} on Baseten, production environment. We're expecting a roughly 5x traffic spike at noon today. Get it ready.",
+      "expected_output": "[Verification: E2E — autoscaling settings actually change.] Increases min_replicas (warm) and max_replicas (headroom) on the production deployment / environment. Sensible numbers grounded in the 5x signal. Explains the change briefly. Means (MCP vs REST) does not matter.",
+      "files": [],
+      "assertions": [
+        {"text": "Autoscaling on the production env/deployment of {{FIXTURE_MODEL_ID}} is updated so min_replicas is raised (keep warm) and max_replicas covers ~5x the prior baseline", "weight": "core"},
+        {"text": "Numbers are sensible (not absurd given the 5x signal) and the response briefly explains the min/max trade-off", "weight": "core"}
+      ]
+    },
+    {
+      "id": 20,
+      "name": "overview-workspace-status",
+      "group": "overview",
+      "complexity": 2,
+      "prompt": "Give me a picture of what's running on Baseten right now. What's healthy, what's not, what's idle.",
+      "expected_output": "[Verification: artifact-only — a written report.] Enumerates models and deployments and inspects their status. Categorizes by state (active, inactive, failed, idle/scaled-to-zero). Surfaces deployment ids/names. Ends with a short summary. Means (MCP vs REST) does not matter.",
+      "files": [],
+      "assertions": [
+        {"text": "Output enumerates deployments grouped by state (at minimum healthy/active vs unhealthy/failed vs idle/inactive) with concrete deployment ids or names", "weight": "core"},
+        {"text": "A short summary line is included up top or at the end", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 30,
+      "name": "debug-broken-deployment",
+      "group": "debug",
+      "complexity": 4,
+      "fixture": "broken-deployment",
+      "prompt": "Model {{FIXTURE_MODEL_ID}} on Baseten keeps returning 500s. Figure out what's wrong, fix it, and verify it's actually working again before you sign off.",
+      "expected_output": "[Verification: E2E — fix is applied and the model recovers.] Agent fetches deployment / build logs, identifies the actual error from the logs (not a guess), produces a concrete fix (config or code change), and applies it. The fix actually works. Means (MCP vs REST) does not matter.",
+      "files": [],
+      "assertions": [
+        {"text": "After the agent's intervention, model {{FIXTURE_MODEL_ID}} no longer surfaces the original error (verified via logs or a successful deploy)", "weight": "core"},
+        {"text": "Diagnosis is grounded in the actual log output (agent quotes or paraphrases the relevant log line) rather than guessed", "weight": "core"},
+        {"text": "Fix is a specific config or code change (not generic advice)", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 31,
+      "name": "debug-latency-regression",
+      "group": "debug",
+      "complexity": 2,
+      "fixture": "two-deployments-regression",
+      "prompt": "Model {{FIXTURE_MODEL_ID}} on Baseten was performing fine yesterday but suddenly feels bad today. Figure out what happened — tell me what changed and what to revert; I'll roll back myself.",
+      "expected_output": "[Verification: investigation-only — no fix applied.] Agent fetches both the current (regressing) and prior (good) deployment configs, diffs them, identifies the regressing change, and proposes a revert or fix. Means (MCP vs REST) does not matter.",
+      "files": [],
+      "assertions": [
+        {"text": "Agent identifies the specific changed field(s) between the regressing and prior deployment configs and ties them to a plausible latency cause", "weight": "core"},
+        {"text": "Agent proposes a concrete revert or alternative fix (not generic advice)", "weight": "core"},
+        {"text": "Agent fetches configs of both deployments for {{FIXTURE_MODEL_ID}} (not just one)", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 40,
+      "name": "tune-slow-vague",
+      "group": "tune",
+      "complexity": 3,
+      "fixture": "deployment-no-model-cache",
+      "variant": "dumb",
+      "prompt": "My Baseten deployment for model {{FIXTURE_MODEL_ID}} feels really slow. What's likely going on, and what would you change? Don't push anything — just tell me. Trace where the time is actually going first, then propose a targeted fix for that — no scattershot recommendations. Show me what you looked at so I can follow your reasoning.",
+      "expected_output": "[Verification: investigation + recommendation — fix not applied.] Agent investigates rather than guessing: pulls logs / config / status, distinguishes cold-start vs steady-state latency, identifies missing weight prefetching as the cold-start cause, and proposes a model_cache block as the fix. Means (MCP vs REST) does not matter.",
+      "files": [],
+      "assertions": [
+        {"text": "Agent identifies missing weight prefetching (model_cache) as the cause and proposes a model_cache block referencing the deployment's actual model repo", "weight": "core"},
+        {"text": "Agent investigates with tools (logs, config, status) before proposing a fix, and distinguishes cold-start from steady-state latency", "weight": "core"}
+      ]
+    },
+    {
+      "id": 41,
+      "name": "tune-slow-cold-start-informed",
+      "group": "tune",
+      "complexity": 2,
+      "fixture": "deployment-no-model-cache",
+      "variant": "informed",
+      "prompt": "Cold starts on my Baseten deployment {{FIXTURE_MODEL_ID}} are taking around 10 minutes. What config change would speed them up? Give me the snippet matching my actual deployment — I'll push it myself.",
+      "expected_output": "[Verification: artifact-only — config change not pushed.] Agent produces a model_cache block referencing the deployment's actual model repo, explains how it speeds up cold starts (prefetched into instance before container start), and tells the user how to roll it out (push + deploy).",
+      "files": [],
+      "assertions": [
+        {"text": "Agent produces a model_cache (or equivalent weight-prefetching) block in config.yaml referencing the deployment's actual model repo_id", "weight": "core"},
+        {"text": "Agent explains that this prefetches weights so cold starts skip the download, and tells the user how to apply the change (truss push or equivalent)", "weight": "core"}
+      ]
+    },
+    {
+      "id": 42,
+      "name": "tune-slow-iteration-loop",
+      "group": "tune",
+      "complexity": 1,
+      "prompt": "Every time I change my Baseten model code, it takes about 8 minutes to test on the deployed model. This is killing my iteration speed.",
+      "expected_output": "[Verification: recommendation-only.] Agent recommends the live-patch / watch loop against a development deployment, gives the concrete command, explains the cost-tier mental model (patch vs full rebuild), and notes what changes still force a full rebuild.",
+      "files": [],
+      "assertions": [
+        {"text": "Agent recommends truss watch / live-patch (e.g. `truss push --watch` or `truss watch`) with the concrete command", "weight": "core"},
+        {"text": "Agent notes the patch loop runs against a development deployment (not production / published) and which changes still force a full rebuild (e.g. python_version, resources, live_reload)", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 50,
+      "name": "integrate-stream-deployed-model",
+      "group": "integrate",
+      "complexity": 1,
+      "prompt": "Write me a Python script that streams tokens from my deployed Baseten model (model id abc12345, production environment). It's vLLM, OpenAI-compatible.",
+      "expected_output": "[Verification: artifact-only — script not executed.] Python using the OpenAI SDK with base_url pointed at the deployed model's environment sync route (https://model-abc12345.api.baseten.co/environments/production/sync/v1 or equivalent), api_key from BASETEN_API_KEY env var, stream=True, loop printing chunk.choices[0].delta.content.",
+      "files": [],
+      "assertions": [
+        {"text": "Python script uses the OpenAI SDK with base_url containing model-abc12345.api.baseten.co and the /environments/production/sync/v1 path (or equivalent OpenAI-compat sync route for that environment)", "weight": "core"},
+        {"text": "chat.completions.create is called with stream=True and streamed chunks are iterated and printed (chunk.choices[0].delta.content or equivalent)", "weight": "core"},
+        {"text": "api_key is sourced from the BASETEN_API_KEY environment variable (not hardcoded)", "weight": "nice"}
+      ]
+    },
+    {
+      "id": 51,
+      "name": "integrate-long-job-resilient",
+      "group": "integrate",
+      "complexity": 1,
+      "prompt": "I need to run a roughly 20-minute generation against my deployed Baseten model (id abc12345, production). The client can disconnect and reconnect later. Show me code.",
+      "expected_output": "[Verification: artifact-only — code not executed.] Uses the async_predict pattern at https://model-abc12345.api.baseten.co/environments/production/async_predict with Api-Key auth prefix. Either valid delivery channel: webhook (payload includes webhook_endpoint, receiver persists output) OR polling /async_request/{request_id}. Does not attempt to combine async with streaming.",
+      "files": [],
+      "assertions": [
+        {"text": "Recommends the async_predict pattern (URL contains /async_predict) with the `Api-Key` (not `Bearer`) auth prefix. Either delivery channel is acceptable: webhook (payload includes `webhook_endpoint`) OR poll-only (no webhook field, retrieves status/result via /async_request/{id}). Both are valid Baseten patterns for the disconnect/reconnect requirement.", "weight": "core"},
+        {"text": "Solution makes the output-retrieval path explicit: if webhook is used, notes that Baseten does not store outputs (the receiver must persist); if polling is used, shows the polling loop against /async_request/{id}. Either way, does not attempt to combine async with streaming.", "weight": "core"}
       ]
     }
   ]
