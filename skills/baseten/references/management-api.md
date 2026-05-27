@@ -11,9 +11,8 @@ The `truss` CLI uses this API under the hood for push and promotion operations.
 
 1. **`baseten` MCP** (preferred).
 2. If MCP not installed → in interactive sessions, offer install (SKILL.md "Agent DX Toolkit")
-3. Otherwise fall back **REST API**
-   Spec: <https://api.baseten.co/v1/spec>. Overview: <https://docs.baseten.co/reference/management-api/overview>.
-   Non-trivial integrations → generate from the spec.
+3. Otherwise fall back **REST API** Spec: <https://api.baseten.co/v1/spec>. Overview:
+   <https://docs.baseten.co/reference/management-api/overview>. Non-trivial integrations → generate from the spec.
 
 ### Authentication
 
@@ -29,8 +28,8 @@ All paths under `/v1`:
 
 - **Models** / **Chains**: list, get, delete.
 - **Deployments**: list, get, delete, activate, deactivate, retry, promote, terminate replica.
-- **Environments**: create, list, get, update (autoscaling, settings). Rolling deployment controls
-  (`pause_promotion`, `resume_promotion`, `force_*`, `cancel_promotion`) live on the environment path.
+- **Environments**: create, list, get, update (autoscaling, settings). Rolling deployment controls (`pause_promotion`,
+  `resume_promotion`, `force_*`, `cancel_promotion`) live on the environment path.
 - **Autoscaling**: PATCH on deployment / environment.
 - **Instance types**: `/v1/instance_types`, `/v1/instance_type_prices` — authoritative valid-resources list for
   `config.yaml`.
@@ -72,9 +71,9 @@ Chain management mirrors models with `/v1/chains/...`. Notable:
 
 ## Gotchas
 
-- **`production` endpoints vs environment endpoints differ.**
-  `/v1/models/{id}/deployments/production/...` addresses the production deployment directly;
-  `/v1/models/{id}/environments/{env_name}/...` addresses an environment (production is one). Pick the right one.
+- **`production` endpoints vs environment endpoints differ.** `/v1/models/{id}/deployments/production/...` addresses the
+  production deployment directly; `/v1/models/{id}/environments/{env_name}/...` addresses an environment (production is
+  one). Pick the right one.
 - **Rolling deployments suspend autoscaling** for the environment for their duration; PATCHing mid-rollout won't behave
   as expected.
 - **One active promotion per environment at a time.** Subsequent requests rejected until the current one
