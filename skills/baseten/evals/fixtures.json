@@ -1,0 +1,7 @@
+{
+  "broken-deployment":          {"FIXTURE_MODEL_ID": "q41x919q"},
+  "two-deployments-regression": {"FIXTURE_MODEL_ID": "32p6op9q"},
+  "deployment-no-model-cache":  {"FIXTURE_MODEL_ID": "3m5kr5kw"},
+  "model-with-dev-deployment":  {"FIXTURE_MODEL_ID": "q84rz4dw"},
+  "model-low-replicas":         {"FIXTURE_MODEL_ID": "q046m4y3"}
+}

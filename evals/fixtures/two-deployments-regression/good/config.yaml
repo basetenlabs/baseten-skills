@@ -1,0 +1,13 @@
+# Baseline — promoted to production.
+model_name: mellow-koala
+python_version: py311
+resources:
+  cpu: '2'
+  memory: 4Gi
+  use_gpu: false
+runtime:
+  predict_concurrency: 4
+weights:
+  - source: hf://sentence-transformers/all-MiniLM-L6-v2@main
+    mount_location: /models/cache
+    allow_patterns: ['*.json', '*.bin', 'tokenizer*']

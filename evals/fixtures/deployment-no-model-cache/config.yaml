@@ -1,0 +1,13 @@
+# Deliberately missing model_cache for a model that would benefit from one.
+# Eval 40/41: agent should propose adding model_cache for the referenced repo.
+model_name: breezy-walrus
+python_version: py311
+requirements:
+  - transformers>=4.36.0
+  - sentence-transformers>=2.5.0
+resources:
+  cpu: '2'
+  memory: 8Gi
+  use_gpu: false
+runtime:
+  predict_concurrency: 1

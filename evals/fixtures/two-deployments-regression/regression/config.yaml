@@ -1,0 +1,11 @@
+# Regression — pushed after 'good' so it becomes the new dev deployment.
+# Changes vs good/: model_cache removed (cold start regression),
+# predict_concurrency dropped 4→1 (steady-state regression), memory halved.
+model_name: mellow-koala
+python_version: py311
+resources:
+  cpu: '2'
+  memory: 2Gi
+  use_gpu: false
+runtime:
+  predict_concurrency: 1
