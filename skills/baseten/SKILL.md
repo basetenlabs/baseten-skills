@@ -147,5 +147,25 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
   pages, ok to use for search, `rg` / `tree` / `find` and `cat`/`head`.
 - `baseten_docs` MCP search is lexical. "speech to text" can rank TTS above STT (because of "speech" hits). Verify
   result relevant, try other queries and blog posts if results are weak.
-- `list_library_models` have mostly no useful tags (e.g. modality). Filter by `display_name` / `hf_repo_id` substrings.
+- `list_library_models` is **baseten curated catalog** (~tens of pre-optimized hosted models, mostly popular open-source
+  LLMs / embeddings). Models are good starter models to play, but not for custom authoring, specific performance needs,
+  finetuning and private HF models etc. No useful tags (modality etc.) — filter by `display_name` / `hf_repo_id`
+  substring.
 - Blog content is not in the docs MCP. Fetch `baseten.co/llms.txt` and search for relevant posts.
+
+### MCP introspection vs. invocation
+
+Backend MCP tools (`get_deployment`, `get_deployment_logs`, `get_deployment_config`, `list_*`, …) describe state. They
+are strongest when you need an exact id / schema / config value to act on, and weakest when the user's complaint is
+about runtime behavior. Resist letting MCP availability shrink the size of your investigation.
+
+- **Look-up tasks** (need an ID, current config, or schema before writing a patch): MCP get/list is the right starting
+  point. Reading the live config beats inferring it.
+- **Behavior tasks** (broken / slow / wrong-shape responses, anything the user _observed_): MCP can supplement but
+  rarely substitutes for exercising the endpoint yourself. A `curl` against the predict URL with a representative
+  payload runs the same code path the user does. Absence of recent errors in MCP-fetched logs is not proof the bug is
+  gone — log windows are bounded, and a problem the user reported five minutes ago may have already aged out of the
+  default tail. For a specific historic incident you can't reproduce, log tools support custom time ranges within
+  retention; use them.
+- Treat cheap introspection as budget freed up for deeper verification (re-curl after a fix, diff configs before and
+  after a PATCH, push a candidate truss and probe it), not as license to stop earlier.
