@@ -46,8 +46,8 @@ Reuse the same session for streaming (`session.post(..., stream=True)`).
 
 ### `httpx`
 
-Sync: one `httpx.Client` created at app startup, closed on shutdown. Async: one `httpx.AsyncClient` per event loop (or app
-lifespan). Set `headers` on the client so every call inherits `Authorization: Api-Key …`.
+Sync: one `httpx.Client` created at app startup, closed on shutdown. Async: one `httpx.AsyncClient` per event loop (or
+app lifespan). Set `headers` on the client so every call inherits `Authorization: Api-Key …`.
 
 ```python
 import os
@@ -266,9 +266,9 @@ for pre-warming right before a latency-sensitive workload.
   client bug.
 - **Failed webhook delivery after retries loses the result.** Log and persist on the webhook side before returning 200.
 - **Request timeouts are on your client.** Long `predict` calls need a client timeout large enough (or use async).
-- **Reuse HTTP clients for repeated calls.** One-off `requests.post()` or a new `OpenAI()` per request adds TLS/handshake
-  latency every time. Use `requests.Session`, a long-lived `httpx` client, or a process-scoped OpenAI client (see
-  Connection reuse).
+- **Reuse HTTP clients for repeated calls.** One-off `requests.post()` or a new `OpenAI()` per request adds
+  TLS/handshake latency every time. Use `requests.Session`, a long-lived `httpx` client, or a process-scoped OpenAI
+  client (see Connection reuse).
 - **Gates on `development` targets return 404 when the dev deployment has scaled to zero** between requests.
   `truss watch` keeps it warm; outside of `watch`, consider `/wake` or the scale-to-zero behavior.
 - **Custom server `sync` routing only works for routes the server actually exposes.** `predict_endpoint` is the shortcut
