@@ -15,6 +15,68 @@ concepts).
 Every request sends an `Authorization: Api-Key $BASETEN_API_KEY` header. API keys are created at
 <https://app.baseten.co/settings/api_keys>.
 
+## Connection reuse (low-latency clients)
+
+For workloads that call Baseten repeatedly (agents, RAG loops, batch drivers), **reuse one HTTP client per process**
+instead of opening a new TCP/TLS connection per request. A one-off `requests.post()` or a new `OpenAI()` per call pays
+TLS and HTTP setup on every round trip — often tens of milliseconds that add up when prompts are short or QPS is high.
+
+### `requests`
+
+Use a module- or app-scoped `requests.Session()` and set auth once on the session:
+
+```python
+import os
+import requests
+
+session = requests.Session()
+session.headers.update({"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"})
+
+def predict(payload: dict) -> dict:
+    response = session.post(
+        f"https://model-{os.environ['MODEL_ID']}.api.baseten.co/environments/production/predict",
+        json=payload,
+        timeout=60,
+    )
+    response.raise_for_status()
+    return response.json()
+```
+
+Reuse the same session for streaming (`session.post(..., stream=True)`).
+
+### `httpx`
+
+Sync: one `httpx.Client` created at app startup, closed on shutdown. Async: one `httpx.AsyncClient` per event loop (or
+app lifespan). Set `headers` on the client so every call inherits `Authorization: Api-Key …`.
+
+```python
+import os
+import httpx
+
+client = httpx.Client(
+    headers={"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"},
+    timeout=60.0,
+)
+# client.post(url, json=payload) for each call; client.close() on shutdown
+```
+
+### OpenAI SDK
+
+The SDK uses `httpx` internally. **Construct one `OpenAI` (or `AsyncOpenAI`) client and reuse it** for all
+`chat.completions` calls — do not instantiate a new client per request. In web apps, register the client as a singleton
+or dependency-injected service; in scripts, create it at module scope.
+
+### When it matters most
+
+- High QPS or tight loops against the same `model-{id}` or `chain-{id}` host
+- Short prompts where network overhead is visible next to model time
+- `/wake` followed immediately by many predictions (reuse the same client for wake and predict)
+
+### Chains (internal)
+
+Chainlet-to-Chainlet calls use generated `BasetenSession` stubs with built-in connection reuse and rotation (see
+`truss-chains.md`). **External** callers to `predict` / `run_remote` must manage reuse themselves as above.
+
 ## Endpoint URL shape
 
 **Models:**
@@ -75,11 +137,11 @@ import os
 import requests
 
 model_id = os.environ["MODEL_ID"]
-api_key = os.environ["BASETEN_API_KEY"]
+session = requests.Session()
+session.headers.update({"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"})
 
-response = requests.post(
+response = session.post(
     f"https://model-{model_id}.api.baseten.co/environments/production/predict",
-    headers={"Authorization": f"Api-Key {api_key}"},
     json={"messages": [{"role": "user", "content": "Hello"}]},
     timeout=60,
 )
@@ -96,7 +158,8 @@ If the deployed model's `predict` returns a generator (or a custom server emits 
 HTTP stream. Read it incrementally:
 
 ```python
-with requests.post(url, headers=headers, json=payload, stream=True, timeout=60) as response:
+# session: requests.Session with Authorization header set once (see Connection reuse)
+with session.post(url, json=payload, stream=True, timeout=60) as response:
     response.raise_for_status()
     for chunk in response.iter_content(chunk_size=None):
         print(chunk.decode(), end="")
@@ -115,6 +178,7 @@ import os
 from openai import OpenAI
 
 model_id = os.environ["MODEL_ID"]
+# Reuse this client for all calls in the process (do not construct per request).
 client = OpenAI(
     base_url=f"https://model-{model_id}.api.baseten.co/environments/production/sync/v1",
     api_key=os.environ["BASETEN_API_KEY"],
@@ -202,6 +266,9 @@ for pre-warming right before a latency-sensitive workload.
   client bug.
 - **Failed webhook delivery after retries loses the result.** Log and persist on the webhook side before returning 200.
 - **Request timeouts are on your client.** Long `predict` calls need a client timeout large enough (or use async).
+- **Reuse HTTP clients for repeated calls.** One-off `requests.post()` or a new `OpenAI()` per request adds
+  TLS/handshake latency every time. Use `requests.Session`, a long-lived `httpx` client, or a process-scoped OpenAI
+  client (see Connection reuse).
 - **Gates on `development` targets return 404 when the dev deployment has scaled to zero** between requests.
   `truss watch` keeps it warm; outside of `watch`, consider `/wake` or the scale-to-zero behavior.
 - **Custom server `sync` routing only works for routes the server actually exposes.** `predict_endpoint` is the shortcut
