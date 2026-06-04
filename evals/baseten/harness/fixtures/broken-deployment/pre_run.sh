@@ -8,9 +8,10 @@
 set -euo pipefail
 : "${BASETEN_MCP_KEY:?required}"
 
-repo_root=$(cd "$(dirname "$0")/../../.." && pwd)
-fixture_dir="$repo_root/evals/fixtures/broken-deployment"
-truss="$repo_root/evals/.venv/bin/truss"
+script_dir=$(cd "$(dirname "$0")" && pwd)
+eval_root=$(cd "$script_dir/../../.." && pwd)
+fixture_dir="$script_dir"
+truss="$eval_root/harness/.venv/bin/truss"
 
 # Self-contained, scoped trussrc — does NOT touch ~/.trussrc.
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT

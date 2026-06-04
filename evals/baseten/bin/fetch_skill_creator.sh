@@ -3,8 +3,9 @@
 # Idempotent. Same script local and in CI.
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-sha="$(tr -d '[:space:]' < "$repo_root/.skill-creator-version")"
+eval_root="$(cd "$(dirname "$0")/.." && pwd)"
+repo_root="$(cd "$eval_root/../.." && pwd)"
+sha="$(tr -d '[:space:]' < "$eval_root/.skill-creator-version")"
 dest="$repo_root/third_party/skill-creator"
 marker="$dest/.fetched-sha"
 

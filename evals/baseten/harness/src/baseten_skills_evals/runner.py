@@ -12,7 +12,7 @@ For each (eval × mode × run):
   4. Spawn a second `claude -p` as the grader (prompt embeds
      third_party/skill-creator/agents/grader.md).
   5. Materialize the layout aggregate_benchmark.py expects, then run it.
-  6. Append one flat row per (eval, mode, run) to eval-results/<skill>/stats.jsonl.
+  6. Append one flat row per (eval, mode, run) to results/stats.jsonl.
 
 Mode encoding: "s<0|1>b<0|1>d<0|1>" — skill, baseten MCP, docs MCP.
 """
@@ -37,7 +37,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-REPO = Path(__file__).resolve().parents[3]
+EVAL_ROOT = Path(__file__).resolve().parents[3]
+REPO = EVAL_ROOT.parents[1]
 SKILL_CREATOR = REPO / "third_party/skill-creator"
 GRADER_PROMPT_FILE = SKILL_CREATOR / "agents/grader.md"
 AGGREGATE_SCRIPT = SKILL_CREATOR / "scripts/aggregate_benchmark.py"
@@ -72,7 +73,7 @@ class Mode:
         return [cls(*bs) for bs in itertools.product([True, False], repeat=3)]
 
 
-EVALS_VENV_BIN = REPO / "evals" / ".venv" / "bin"
+EVALS_VENV_BIN = EVAL_ROOT / "harness" / ".venv" / "bin"
 
 # Strict allowlist of env vars passed to claude subprocesses. Anything else
 # (user's personal BASETEN_API_KEY from .zshrc, TRUSS_API_KEY, AWS keys, etc.)
@@ -414,10 +415,10 @@ def _fixture_lock(name: str) -> threading.Lock:
 
 
 def _run_pre_hook(fixture: str | None, fixture_model_id: str | None) -> None:
-    """Run evals/fixtures/<name>/pre_run.sh if present. Inherits parent env + adds FIXTURE_MODEL_ID."""
+    """Run harness/fixtures/<name>/pre_run.sh if present. Inherits parent env + adds FIXTURE_MODEL_ID."""
     if not fixture:
         return
-    script = REPO / "evals" / "fixtures" / fixture / "pre_run.sh"
+    script = EVAL_ROOT / "harness" / "fixtures" / fixture / "pre_run.sh"
     if not script.exists():
         return
     env = dict(os.environ)
@@ -507,13 +508,13 @@ def main() -> int:
     ap.add_argument("--ids", type=int, nargs="*", help="Eval IDs to run (default: all)")
     ap.add_argument("--runs", type=int, default=5, help="Repetitions per (eval × mode). Default 5 — at N=3, Wilson 95%% CI on binary pass is ~±0.5; N≥5 gets useful.")
     ap.add_argument("--model", default=None, help="Claude model id (default: cli default)")
-    ap.add_argument("--out", default="eval-runs", help="Symlink dir into /tmp artifacts (gitignored)")
+    ap.add_argument("--out", default="runs", help="Symlink dir for artifacts (default: runs/, gitignored)")
     ap.add_argument("--num-workers", type=int, default=1, help="Max parallel (eval × mode × run) workers (default 1 — higher values trigger throttling on the single-workspace test account)")
-    ap.add_argument("--stats-path", default=None, help="Override stats.jsonl path (default: eval-results/<skill>/stats.jsonl)")
+    ap.add_argument("--stats-path", default=None, help="Override stats.jsonl path (default: results/stats.jsonl)")
     ap.add_argument("--resume", default=None, help="Resume an interrupted sweep — point at its /tmp bench_dir; units with existing grading.json are skipped.")
     args = ap.parse_args()
 
-    load_dotenv(REPO / ".env", override=False)
+    load_dotenv(EVAL_ROOT / ".env", override=False)
     for required in ("BASETEN_MCP_KEY", "ANTHROPIC_API_KEY"):
         if not os.environ.get(required):
             print(f"missing env: {required} (set in .env or shell)", file=sys.stderr)
@@ -556,7 +557,7 @@ def main() -> int:
         print("No evals matched (after fixture resolution)", file=sys.stderr)
         return 1
     if not GRADER_PROMPT_FILE.exists():
-        print("third_party/skill-creator missing — run bin/fetch_skill_creator.sh", file=sys.stderr)
+        print("third_party/skill-creator missing — run evals/baseten/bin/fetch_skill_creator.sh", file=sys.stderr)
         return 1
 
     if args.resume:
@@ -571,17 +572,16 @@ def main() -> int:
     else:
         ts = utcnow()
         sha = git_sha()
-        # Persistent artifact root under the repo's eval-results — survives codespace
-        # restart and /tmp purges. Previous /tmp location lost data on idle-stop.
-        runs_root = REPO / "eval-results" / args.skill / "runs"
+        # Persistent artifact root — survives /tmp purges.
+        runs_root = EVAL_ROOT / "runs"
         runs_root.mkdir(parents=True, exist_ok=True)
         bench_dir = runs_root / f"baseten-skills-evals_{ts}_{sha}"
         bench_dir.mkdir()
-        link_root = REPO / args.out
+        link_root = EVAL_ROOT / args.out if not Path(args.out).is_absolute() else Path(args.out)
         link_root.mkdir(parents=True, exist_ok=True)
         with contextlib.suppress(FileExistsError):
             (link_root / f"{ts}__{sha}").symlink_to(bench_dir)
-    stats_path = Path(args.stats_path) if args.stats_path else REPO / "eval-results" / args.skill / "stats.jsonl"
+    stats_path = Path(args.stats_path) if args.stats_path else EVAL_ROOT / "results" / "stats.jsonl"
 
     global BUILTIN_SKILLS
     BUILTIN_SKILLS = probe_builtin_skills(bench_dir)

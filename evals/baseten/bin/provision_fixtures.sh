@@ -4,14 +4,15 @@
 #
 # Requires:
 #   - BASETEN_MCP_KEY env var (test-workspace key)
-#   - truss CLI (use the one in evals/.venv: ./evals/.venv/bin/truss)
+#   - truss CLI (use the one in harness/.venv: ./harness/.venv/bin/truss)
 set -euo pipefail
 
 [[ -n "${BASETEN_MCP_KEY:-}" ]] || { echo "BASETEN_MCP_KEY required"; exit 1; }
 
-repo_root=$(cd "$(dirname "$0")/.." && pwd)
-fixtures=$repo_root/evals/fixtures
-truss=$repo_root/evals/.venv/bin/truss
+eval_root=$(cd "$(dirname "$0")/.." && pwd)
+repo_root=$(cd "$eval_root/../.." && pwd)
+fixtures=$eval_root/harness/fixtures
+truss=$eval_root/harness/.venv/bin/truss
 api=https://api.baseten.co/v1
 export TRUSS_API_KEY=$BASETEN_MCP_KEY
 
@@ -30,7 +31,7 @@ export HOME=$fake_home
 get_id() {
   local name=$1
   curl -sS -H "Authorization: Api-Key $BASETEN_MCP_KEY" "$api/models" \
-    | "$repo_root/evals/.venv/bin/python" -c "
+    | "$eval_root/harness/.venv/bin/python" -c "
 import sys, json
 data = json.load(sys.stdin)
 for m in data.get('models', []):

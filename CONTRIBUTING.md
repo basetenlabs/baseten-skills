@@ -15,7 +15,7 @@ Skill changes ship with eval results, produced via the `skill-creator` workflow 
 
 ## Writing up results
 
-Write a curated summary into `eval-results/<skill>/YYYY-MM-DD.md` and link it from the PR. The summary should let a reviewer judge the change without needing the raw artifacts:
+Write a curated summary into `evals/<skill>/results/YYYY-MM-DD.md` and link it from the PR. The summary should let a reviewer judge the change without needing the raw artifacts:
 
 - The prompts that were run (verbatim).
 - The assertions that were checked.

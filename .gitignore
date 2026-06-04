@@ -1,7 +1,6 @@
 .idea/
 .env
-eval-runs/
-eval-results/baseten/runs/
+evals/*/runs/
 third_party/skill-creator/
 .venv/
 __pycache__/
