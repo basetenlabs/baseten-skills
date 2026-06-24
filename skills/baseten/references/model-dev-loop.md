@@ -94,8 +94,8 @@ patched-on-top-of-patched dev state. Then promote to the target environment.
 ## Inference SSH
 
 Full terminal in a running model container — debug, inspect files, run commands, `scp`/`sftp`. Requires org enablement
-(contact support) and `runtime.remote_ssh.enabled: true` in `config.yaml`. MCP tool
-`sign_ssh_certificate_training_job` covers the training-job equivalent. Docs: `inference/ssh.mdx`.
+(contact support) and `runtime.remote_ssh.enabled: true` in `config.yaml`. MCP tool `sign_ssh_certificate_training_job`
+covers the training-job equivalent. Docs: `inference/ssh.mdx`.
 
 ## Gotchas
 

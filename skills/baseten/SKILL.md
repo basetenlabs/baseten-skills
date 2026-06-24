@@ -14,9 +14,10 @@ cross-cloud HA, and seamless developer workflows.
 - **Dedicated Inference** - deploy any model, performance-optimized + horizontally scaled. Authored as auto-wrapped
   Truss server, custom Docker server, or compound/orchestrated deployment via Chains.
 - **Model APIs** - pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
-- **Training** - two paths: **Truss Train** (BYO container, any framework, full hardware control) and **Loops** (Tinker-compatible
-  managed SDK for SFT + async RL; paired trainer + sampling server, live weight transfers, one-click checkpoint deploy).
-  Multi-node, 1T+ params, 10TB+ datasets, H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels into containers.
+- **Training** - two paths: **Truss Train** (BYO container, any framework, full hardware control) and **Loops**
+  (Tinker-compatible managed SDK for SFT + async RL; paired trainer + sampling server, live weight transfers, one-click
+  checkpoint deploy). Multi-node, 1T+ params, 10TB+ datasets, H100/H200/B200. Remote access: SSH and VS Code/Cursor
+  tunnels into containers.
 - **Frontier Gateway** - operate your own foundation model B2C.
 
 ## Agent DX Toolkit
@@ -70,9 +71,11 @@ Orthogonal operational surfaces (independent of which flavor above):
 
 - Iterate / patch a deployment → `model-dev-loop.md`
 - Promote, environments, autoscaling → `deployment-lifecycle.md`
-- Gradual traffic shift to new deployment (pause/resume/cancel) → rolling deployments: `deployment/rolling-deployments.mdx`
+- Gradual traffic shift to new deployment (pause/resume/cancel) → rolling deployments:
+  `deployment/rolling-deployments.mdx`
 - Call a deployment → `inference-api.md` (custom) or `model-apis.md` (hosted)
-- High-throughput batch calls (embeddings, reranking) → Performance client (Rust, 1200+ req/s): `inference/performance-client.mdx`
+- High-throughput batch calls (embeddings, reranking) → Performance client (Rust, 1200+ req/s):
+  `inference/performance-client.mdx`
 - Programmatic control plane → `management-api.md`
 
 Real-world nuances the table can't capture:
@@ -144,8 +147,8 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
   secrets, resources).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
 - Training and Frontier Gateway: no skill reference. Use `baseten` MCP + `baseten_docs` MCP. For training path choice
-  see `training/overview.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels
-  into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
+  see `training/overview.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels into
+  training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
 
 ### Tool quirks
 
