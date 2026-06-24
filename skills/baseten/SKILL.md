@@ -14,8 +14,9 @@ cross-cloud HA, and seamless developer workflows.
 - **Dedicated Inference** - deploy any model, performance-optimized + horizontally scaled. Authored as auto-wrapped
   Truss server, custom Docker server, or compound/orchestrated deployment via Chains.
 - **Model APIs** - pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
-- **Training** - managed training + fine-tuning (SFT, RL, LoRA). Multi-node, 1T+ params, 10TB+ datasets, 256k seq
-  lengths on H100/H200/B200. BYO scripts or recipes. W&B / HF / S3.
+- **Training** - two paths: **Truss Train** (BYO container, any framework, full hardware control) and **Loops** (Tinker-compatible
+  managed SDK for SFT + async RL; paired trainer + sampling server, live weight transfers, one-click checkpoint deploy).
+  Multi-node, 1T+ params, 10TB+ datasets, H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels into containers.
 - **Frontier Gateway** - operate your own foundation model B2C.
 
 ## Agent DX Toolkit
@@ -23,7 +24,7 @@ cross-cloud HA, and seamless developer workflows.
 | Component | Provides | Install |
 | --- | --- | --- |
 | `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains. API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
-| `baseten_docs` MCP | Keyword search of `docs.baseten.co`, grep. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
+| `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
 | `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login` once. | `pip install truss --upgrade` (respect user package manager: uv, poetry...) |
 | `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
 | This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx skills add basetenlabs/baseten-skills -g -y` |
@@ -69,7 +70,9 @@ Orthogonal operational surfaces (independent of which flavor above):
 
 - Iterate / patch a deployment → `model-dev-loop.md`
 - Promote, environments, autoscaling → `deployment-lifecycle.md`
+- Gradual traffic shift to new deployment (pause/resume/cancel) → rolling deployments: `deployment/rolling-deployments.mdx`
 - Call a deployment → `inference-api.md` (custom) or `model-apis.md` (hosted)
+- High-throughput batch calls (embeddings, reranking) → Performance client (Rust, 1200+ req/s): `inference/performance-client.mdx`
 - Programmatic control plane → `management-api.md`
 
 Real-world nuances the table can't capture:
@@ -140,14 +143,17 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 - Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`,
   secrets, resources).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
-- Training (SFT / RL / LoRA) and Frontier Gateway: no reference. Use `baseten` MCP + `baseten_docs` MCP.
+- Training and Frontier Gateway: no skill reference. Use `baseten` MCP + `baseten_docs` MCP. For training path choice
+  see `training/overview.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels
+  into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
 
 ### Tool quirks
 
-- Fetch full doc pages via `https://docs.baseten.co/<path>.md` (not docs MCP). Mintlify MCP server has a bug for full
-  pages, ok to use for search, `rg` / `tree` / `find` and `cat`/`head`.
-- `baseten_docs` MCP search is lexical. "speech to text" can rank TTS above STT (because of "speech" hits). Verify
-  result relevant, try other queries and blog posts if results are weak.
+- `baseten_docs` MCP search is semantic (embedding-based). Results are generally intent-aware, but can still miss on
+  niche phrasing — try rephrased queries or fetch `docs.baseten.co/llms.txt` as an index if results are weak.
+- Full doc pages: use `query_docs_filesystem_baseten` with `cat`/`head` on `.mdx` paths. Direct `.md` URL fetch
+  (`https://docs.baseten.co/<path>.md`) also works and is faster for single-page reads.
+- Inference SSH (terminal in running container, requires org enablement) → `model-dev-loop.md` § Inference SSH.
 - `list_library_models` is **baseten curated catalog** (~tens of pre-optimized hosted models, mostly popular open-source
   LLMs / embeddings). Models are good starter models to play, but not for custom authoring, specific performance needs,
   finetuning and private HF models etc. No useful tags (modality etc.) — filter by `display_name` / `hf_repo_id`

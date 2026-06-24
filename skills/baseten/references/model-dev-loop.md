@@ -91,6 +91,12 @@ Don't enumerate every "is this patchable?" up front — try the patch, fall back
 After iteration: do one clean `truss [chains] push` without `--watch` so production starts from a fresh image, not a
 patched-on-top-of-patched dev state. Then promote to the target environment.
 
+## Inference SSH
+
+Full terminal in a running model container — debug, inspect files, run commands, `scp`/`sftp`. Requires org enablement
+(contact support) and `runtime.remote_ssh.enabled: true` in `config.yaml`. MCP tool
+`sign_ssh_certificate_training_job` covers the training-job equivalent. Docs: `inference/ssh.mdx`.
+
 ## Gotchas
 
 - **Watch keeps the dev deployment warm** — no scale-to-zero while watching. Stop it when not iterating.
