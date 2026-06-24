@@ -151,7 +151,7 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 
 - `baseten_docs` MCP search is semantic (embedding-based). Results are generally intent-aware, but can still miss on
   niche phrasing — try rephrased queries or fetch `docs.baseten.co/llms.txt` as an index if results are weak.
-- Full doc pages: use `query_docs_filesystem_baseten` with `cat`/`head` on `.mdx` paths. Direct `.md` URL fetch
+- Full doc pages: use the `baseten_docs` MCP filesystem tool (the `query_docs_filesystem*` tool) with `cat`/`head` on `.mdx` paths. Direct `.md` URL fetch
   (`https://docs.baseten.co/<path>.md`) also works and is faster for single-page reads.
 - Inference SSH (terminal in running container, requires org enablement) → `model-dev-loop.md` § Inference SSH.
 - `list_library_models` is **baseten curated catalog** (~tens of pre-optimized hosted models, mostly popular open-source
