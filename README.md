@@ -27,29 +27,60 @@ What you can do without leaving the chat:
 
 ### Installation
 
+#### Agent-driven (recommended)
+
+Set your key, then paste this into your agent:
+
+Linux/Mac:
 ```bash
 export BASETEN_MCP_KEY=...
-
-{ [ -n "$BASETEN_MCP_KEY" ] && [ "$BASETEN_MCP_KEY" != "..." ]; } || { echo "Error: set BASETEN_MCP_KEY first"; false; } && \
-npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}" && \
-npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y && \
-npx skills add basetenlabs/baseten-skills -g -y
 ```
 
-- `-g` installs it globally on your host.
-- `-y` confirms selection for all detected harnesses.
-- If your harness supports env variable interpolation, you may also edit the MCP config file to expand your env vars
-  and set the desired key in the shell that starts the agent.
+Windows:
+```powershell
+$env:BASETEN_MCP_KEY = "..."
+```
 
-The `truss` CLI is separate and needed only for deployment authoring (not pure ops work). See [CLI docs](https://docs.baseten.co/reference/cli/truss/overview).
-E.g. if you use pip (similar for other package
-managers):
+Then paste this into the agent of your choice
+```
+Install the Baseten agent toolkit following instructions from `github.com/basetenlabs/baseten-skills`.
+
+- use `npx skills add` and `npx add-mcp`
+- all global and for all agents (`-g -y`)
+- The baseten backend server needs auth header `Authorization: Bearer $BASETEN_MCP_KEY`. Run the commands through the shell (Bash tool) so it expands the env var; don't read or inline the key value. User must have `BASETEN_MCP_KEY` set in the shell.
+```
+
+#### Manual
+
+Linux/Mac:
+```bash
+export BASETEN_MCP_KEY=...
+npx skills add basetenlabs/baseten-skills -g -y
+npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"
+npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
+```
+
+Windows:
+```powershell
+$env:BASETEN_MCP_KEY = "..."
+npx skills add basetenlabs/baseten-skills -g -y
+npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer $env:BASETEN_MCP_KEY"
+npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
+```
+
+- `-g` global, `-y` auto-confirms all detected harnesses.
+- Harnesses that support env-var interpolation: point the MCP config at `$BASETEN_MCP_KEY` instead of baking the key in.
+- Some agents prompt before reading skill reference files (they live outside your workspace). In Claude Code,
+  pre-approve via `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
+
+The `truss` CLI is separate, needed for deployment authoring; see
+[CLI docs](https://docs.baseten.co/reference/cli/truss/overview):
 
 ```bash
-pip install truss --upgrade
+uv tool install truss
 ```
 
-You can install only part of the components or modify commands - but the best user experience comes from their combination.
+Components (skill, 2x MCPs, CLI) can be installed selectively, but work best in combination.
 
 ## Getting started & Usage
 
