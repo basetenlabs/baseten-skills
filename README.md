@@ -41,7 +41,7 @@ Windows:
 $env:BASETEN_MCP_KEY = "..."
 ```
 
-Then paste this into the agent of your choice
+Then paste this into the agent of your choice:
 ```
 Install the Baseten agent toolkit following instructions from `github.com/basetenlabs/baseten-skills`.
 
