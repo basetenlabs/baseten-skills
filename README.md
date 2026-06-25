@@ -47,7 +47,7 @@ Install the Baseten agent toolkit following instructions from `github.com/basete
 
 - use `npx skills add` and `npx add-mcp`
 - all global and for all agents (`-g -y`)
-- The baseten backend server needs auth header `Authorization: Bearer $BASETEN_MCP_KEY`. Run the commands through the shell (Bash tool) so it expands the env var; don't read or inline the key value. User must have `BASETEN_MCP_KEY` set in the shell.
+- The baseten backend server needs auth header `Authorization: Bearer $BASETEN_MCP_KEY` (or `Authorization: Bearer $env:BASETEN_MCP_KEY` in PowerShell). Run the install commands in a shell that has `BASETEN_MCP_KEY` set so the env var expands; don't read or inline the key value.
 ```
 
 #### Manual
