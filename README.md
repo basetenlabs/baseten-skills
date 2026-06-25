@@ -36,9 +36,10 @@ Linux/Mac:
 export BASETEN_MCP_KEY=...
 ```
 
-Windows:
+Windows (PowerShell or cmd.exe):
 ```powershell
-$env:BASETEN_MCP_KEY = "..."
+$env:BASETEN_MCP_KEY = "..."   # PowerShell
+set BASETEN_MCP_KEY=...         # cmd.exe
 ```
 
 Then paste this into the agent of your choice:
