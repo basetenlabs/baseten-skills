@@ -111,6 +111,9 @@ model_cache:
 The weights are baked into the image (or a layer) and available on disk when the container starts. Pair with a Hugging
 Face access secret if the repo is gated.
 
+For the fastest cold starts on very large models, Baseten Delivery Network (BDN) streams weights at container start
+instead of baking them in — see `development/model/bdn`.
+
 **Multi-variant repos: narrow `allow_patterns`, set `variant` at load.** HF repos for many diffusion / vision models
 ship both fp32 and fp16 (sometimes bf16) copies of the same weights. A naive `allow_patterns: ["*.safetensors"]` pulls
 both — doubles disk and ~doubles `model.load()` time (the loader may pick the fp32 set and you pay for it even when you
