@@ -136,7 +136,7 @@ Programmatic equivalents live in `management-api.md`.
 
 ## CI/CD
 
-The normal CI/CD shape is `truss push` with some mix of `--wait`, `--tail`, `--json`, `--environment`,
+The normal CI/CD shape is `truss push` with some mix of `--wait`, `--tail`, `--output json`, `--environment`,
 `--include-git-info`, and `--labels`. See `truss-cli.md` for specifics. <https://docs.baseten.co/deployment/ci-cd> has
 worked examples.
 
