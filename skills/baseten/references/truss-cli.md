@@ -16,12 +16,44 @@ the user's preferred package manager.
 
 ## Authenticate
 
+`truss login` is a top-level alias for `truss auth login`; both accept `--browser`, `--api-key TEXT`, and
+`--remote TEXT`.
+
 ```
 truss login
 ```
 
-Paste an API key from <https://app.baseten.co/settings/api_keys> when prompted. Truss stores credentials in `.trussrc`
-for future commands. In CI, set `BASETEN_API_KEY` and use `--remote` to select the saved remote name.
+In an interactive terminal, this prompts you to either paste an API key from <https://app.baseten.co/settings/api_keys>
+or log in via browser (OAuth). Pass `--browser` to start the OAuth device flow directly, or pass `--api-key TEXT` to
+authenticate with an API key; the two flags are mutually exclusive.
+
+In a non-interactive run, you must pass one of those flags explicitly. Otherwise, Truss errors with:
+
+```
+Specify --browser or --api-key when running non-interactively.
+```
+
+In CI, set `BASETEN_API_KEY` and use `--remote` to select the saved remote name; Truss falls back to that env var when
+the saved remote has no stored key. To create the remote itself non-interactively, run
+`truss login --api-key "$BASETEN_API_KEY"` — `--api-key` is a `login` flag, not a `push` flag. Verify the active remote
+with:
+
+```
+truss auth status
+```
+
+Sample output:
+
+```
+remote: baseten
+remote_url: https://app.baseten.co
+auth_type: api_key (plaintext)
+source: trussrc-inline
+```
+
+When only one remote is configured, `--remote <name>` is inferred. With multiple remotes in `.trussrc`, pass it
+explicitly or the command errors with `Multiple remotes available. Please specify one with --remote.` The `source` field
+is `trussrc-inline` for credentials stored in `.trussrc` and `keyring` for credentials stored in the OS keyring.
 
 ## `truss init` - scaffold
 
@@ -66,7 +98,7 @@ truss push --wait --tail
 CI-friendly publish with machine-readable output (intended for automation):
 
 ```
-truss push --json --wait
+truss push --output json --wait
 ```
 
 Promote straight to production:
@@ -98,7 +130,8 @@ truss push --environment staging
 - `--model-name <name>`: temporarily override `model_name` without editing `config.yaml`.
 - `--wait` / `--no-wait`: block until the deploy finishes; exit non-zero on failure.
 - `--tail`: stream deployment logs after push. Combines with `--wait` and with `--watch`.
-- `--json`: emit structured output suitable for CI parsing.
+- `--output [text|json]`: select the output format. `json` writes structured JSON to stdout and progress and logs to
+  stderr, which is suitable for CI parsing.
 - `--labels '{"k":"v"}'`: attach searchable key/value labels to the deployment.
 - `--include-git-info`: attach git sha, branch, and tag.
 - `--no-cache`: force a full rebuild without using cached layers.
@@ -145,8 +178,10 @@ Fetches recent logs for a deployment. For continuous streaming during a push, pr
 
 ## `truss configure`, `truss whoami`, `truss cleanup`
 
-Workspace and account utilities. `whoami` prints the current authenticated user. `configure` manages remotes in
-`.trussrc`. `cleanup` removes locally cached deployment artifacts.
+Workspace and account utilities. `whoami` prints the current authenticated user. `configure` opens `$EDITOR` on
+`~/.trussrc` via `click.edit()` and blocks until the editor exits. Use `truss login` / `truss auth login` to add a
+remote and `truss auth logout` to remove one without opening an editor. `cleanup` removes locally cached deployment
+artifacts.
 
 ## Gotchas
 
@@ -156,6 +191,10 @@ Workspace and account utilities. `whoami` prints the current authenticated user.
   Stop the watch (or accept the cost) accordingly.
 - **`--watch-hot-reload` does not re-run `__init__` or `load`.** If your change relies on new state set up there, do a
   full reload (omit `--watch-hot-reload`) instead.
+- **Bare `truss login` errors in a non-interactive run.** Pass either `--browser` or `--api-key`; otherwise it errors
+  with `Specify --browser or --api-key when running non-interactively.`
+- **`truss configure` blocks on `$EDITOR`.** It opens `~/.trussrc` via `click.edit()` and waits for the editor to exit,
+  so do not run it from a non-interactive agent.
 - **`.trussrc` holds credentials.** Do not commit it. In CI / scripted flows, prefer `BASETEN_API_KEY` plus
   `--remote <name>` over committing `.trussrc`. Truss is moving toward OS keyring storage; if asking for a key, ask the
   user to export it as an env var rather than reading or writing credential files yourself.
