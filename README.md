@@ -2,8 +2,9 @@
 
 Agent DX bundle — [`baseten` skill](skills/baseten/) tuned for [Baseten](https://www.baseten.co) backend MCP, Docs MCP and CLI.
 
-The MCP makes token usage and wall time more efficient - our evals (below) show that, while agents can still achieve 
-goals with raw REST API usage with similar pass rate. Additionally, the MCP tool annotations allow agent 
+The April 2026 evals below found lower token usage and wall time with the MCP, while agents using raw REST API calls
+reached similar pass rates. The [September refresh](evals/baseten/results/2026-09-09.md) reports a new comparison and
+its limitations. Additionally, the MCP tool annotations allow agent
 harnesses formal gating of destructive operations, providing additional safeguards.
 
 What you can do without leaving the chat:
@@ -95,6 +96,8 @@ solution approaches, deploying and iterating on models or managing your workspac
 needed automatically; alternatively you can invoke it with `/baseten`.
 
 ## Evaluation results
+
+These are historical April 2026 results. The [September refresh](evals/baseten/results/2026-09-09.md) has not yet completed a new behavioral sweep.
 
 We measured the `baseten` skill against the bare Claude Opus 4.7 baseline across 16 tasks spanning model
 authoring, integration, operate, debug, and tune workflows. Five configurations × 4 runs × 16 evals = 320 runs.

@@ -49,7 +49,7 @@ Call (URL is printed by `push`):
 
 ```
 curl -X POST $INVOCATION_URL \
-  -H "Authorization: Api-Key $BASETEN_API_KEY" \
+  -H "Authorization: Bearer $BASETEN_API_KEY" \
   -d '{"max_value": 10}'
 ```
 
@@ -86,8 +86,8 @@ class PhiLLM(chains.ChainletBase):
     )
 ```
 
-`compute`, `docker_image`, and `assets` are the common knobs; `assets.cached` bakes model weights into the image at
-build time, same idea as the `model_cache` block in a classic Truss `config.yaml`. The full API surface is at
+`compute`, `docker_image`, and `assets` are common knobs. Check the current asset configuration for weight caching;
+cache behavior depends on the selected storage mode. The full API surface is at
 <https://docs.baseten.co/reference/sdk/chains>.
 
 ## What Chains gives you (beyond DIY orchestration)
@@ -149,13 +149,25 @@ The entrypoint's `run_remote` is exposed at a URL of the shape:
 https://chain-{chain_id}.api.baseten.co/.../run_remote
 ```
 
-Use standard HTTP with an `Authorization: Api-Key $BASETEN_API_KEY` header. Body is the JSON-encoded arguments to
+Use standard HTTP with an `Authorization: Bearer $BASETEN_API_KEY` header. Body is the JSON-encoded arguments to
 `run_remote`.
 
 For streaming, binary I/O, and websockets, see:
 
 - <https://docs.baseten.co/development/chain/streaming>
 - <https://docs.baseten.co/development/chain/binaryio>
+
+## Wrap an existing Truss
+
+With `truss>=0.18.5`, subclass `chains.TrussChainlet` and set `truss_dir` to package an existing Truss directory inside
+a Chain. A `ChainletBase` caller receives a `TrussHandle` from `chains.depends()`. Use the handle's `http_call_args()`
+or `ws_call_args()` with your HTTP or WebSocket client. The handle returns connection arguments; it does not issue
+requests or validate their bodies.
+
+A wrapped Truss cannot be the entrypoint or call downstream chainlets. If the model is already deployed separately, use
+a stub instead. Check the installed Truss version before selecting this integration.
+
+Source: <https://docs.baseten.co/development/chain/truss-chainlets>.
 
 ## Gotchas
 

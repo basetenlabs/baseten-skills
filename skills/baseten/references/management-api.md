@@ -10,14 +10,14 @@ The `truss` CLI uses this API under the hood for push and promotion operations.
 ## How to call it
 
 1. **`baseten` MCP** (preferred).
-2. If MCP not installed → in interactive sessions, offer install (SKILL.md "Agent DX Toolkit")
-3. Otherwise fall back **REST API** Spec: <https://api.baseten.co/v1/spec>. Overview:
+2. Use an installed `baseten` CLI for workspace operations; see `baseten-cli.md`.
+3. Otherwise use the **REST API** Spec: <https://api.baseten.co/v1/spec>. Overview:
    <https://docs.baseten.co/reference/management-api/overview>. Non-trivial integrations → generate from the spec.
 
 ### Authentication
 
 ```
-Authorization: Api-Key $BASETEN_API_KEY
+Authorization: Bearer $BASETEN_API_KEY
 ```
 
 Keys: <https://app.baseten.co/settings/api_keys>.
@@ -34,8 +34,8 @@ All paths under `/v1`:
 - **Instance types**: `/v1/instance_types`, `/v1/instance_type_prices` — authoritative valid-resources list for
   `config.yaml`.
 - **Secrets**: `/v1/secrets` (workspace), `/v1/teams/{team_id}/secrets` (team-scoped). Upsert by name.
-- **API keys**, **Teams**, **Billing** (`/v1/billing/usage_summary`), **Training** (`/v1/training_projects/...` — out of
-  scope for this skill, see <https://docs.baseten.co/reference/training-api>).
+- **API keys**, **Teams**, **Billing** (`/v1/billing/usage_summary`), **Training** (`/v1/training_projects/...` — see
+  <https://docs.baseten.co/reference/training-api>).
 
 Full endpoint table: <https://docs.baseten.co/reference/management-api/overview>.
 
@@ -46,7 +46,7 @@ import os
 import requests
 
 BASE_URL = "https://api.baseten.co"
-HEADERS = {"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"}
+HEADERS = {"Authorization": f"Bearer {os.environ['BASETEN_API_KEY']}"}
 
 
 def list_deployments(model_id: str) -> list[dict]:
@@ -81,8 +81,8 @@ Chain management mirrors models with `/v1/chains/...`. Notable:
 - **Production cannot be deleted** unless the model itself is deleted.
 - **Deleted deployments / environments → 404** on subsequent calls; deactivation is the reversible option.
 - **Secrets API upserts by name.** Reusing a name overwrites the existing value.
-- **401s on a valid-looking key** are almost always the `Api-Key` prefix being malformed or replaced with `Bearer`.
-  Custom-deployment inference endpoints use `Api-Key` too; Model APIs use `Bearer`. Don't generalize.
+- **Authentication:** current docs use `Bearer`; legacy `Api-Key` remains accepted. A 401 is not evidence that the
+  Bearer scheme is wrong. Check the key and the authentication requirements in the endpoint documentation.
 
 ## Further reading
 

@@ -66,7 +66,7 @@ truss push --wait --tail
 CI-friendly publish with machine-readable output (intended for automation):
 
 ```
-truss push --json --wait
+truss push --output json --wait
 ```
 
 Promote straight to production:
@@ -84,21 +84,22 @@ truss push --environment staging
 ### Key flags
 
 - `--watch`: create a **development** deployment and watch for source changes, applying live patches. The dev model
-  stays warm by default (no scale-to-zero) while watching.
+  stays warm by default; pass `--watch-no-sleep=false` to allow scale-to-zero.
 - `--watch-hot-reload`: with `--watch`, swap the model class in-process instead of restarting the server. Faster
   iteration; preserves loaded weights and caches; does **not** re-run `__init__` or `load`. Use when you only changed
   `predict` logic.
 - `--promote`: published deployment, promoted to production even if a production deployment already exists.
 - `--environment <name>`: published deployment, promoted into the named environment. When set, `--promote` is ignored.
-- `--preserve-previous-production-deployment`: with `--promote`, inherit the previous production deployment's
-  autoscaling settings.
+- `--preserve-previous-production-deployment`: with `--promote`, preserve the previous production deployment's
+  autoscaling settings instead of allowing that previous deployment to scale to zero.
 - `--preserve-env-instance-type` / `--no-preserve-env-instance-type`: with `--environment`, keep the environment's
   configured instance type instead of the Truss config's `resources`. Default is to preserve.
 - `--deployment-name <name>`: name the published deployment (alphanumeric, `.`, `-`, `_`). Ignored for `--watch`.
 - `--model-name <name>`: temporarily override `model_name` without editing `config.yaml`.
 - `--wait` / `--no-wait`: block until the deploy finishes; exit non-zero on failure.
 - `--tail`: stream deployment logs after push. Combines with `--wait` and with `--watch`.
-- `--json`: emit structured output suitable for CI parsing.
+- `--output json`: emit structured output suitable for CI parsing. Check installed help before assuming flags from older
+  releases.
 - `--labels '{"k":"v"}'`: attach searchable key/value labels to the deployment.
 - `--include-git-info`: attach git sha, branch, and tag.
 - `--no-cache`: force a full rebuild without using cached layers.
@@ -117,8 +118,9 @@ truss watch
 Re-attaches to an existing development deployment and applies live patches when files change. Equivalent to running
 `truss push --watch` once and resuming the watch loop later.
 
-`truss watch` keeps the dev deployment **warm** (prevents scale-to-zero) while it is running. If the user expects the
-dev deployment to scale to zero while a watch is active, surface this so they understand why replicas are still running.
+`truss watch` keeps the dev deployment warm by default. Pass `--no-sleep=false` to allow scale-to-zero while watching.
+For `truss push --watch`, the corresponding option is `--watch-no-sleep=false`. These options take boolean values; check
+installed help when scripting them.
 
 Other flags:
 
@@ -152,7 +154,7 @@ Workspace and account utilities. `whoami` prints the current authenticated user.
 
 - **Default `truss push` is a published deployment, not a dev one.** For an iterative dev loop, use `--watch` (or
   `truss watch` afterwards).
-- **`truss watch` keeps the dev deployment warm by default.** Replicas do not scale to zero while the watch is running.
+- **Watch keeps development deployments warm by default.** Disable with `truss watch --no-sleep=false` when appropriate.
   Stop the watch (or accept the cost) accordingly.
 - **`--watch-hot-reload` does not re-run `__init__` or `load`.** If your change relies on new state set up there, do a
   full reload (omit `--watch-hot-reload`) instead.

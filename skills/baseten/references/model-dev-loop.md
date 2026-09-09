@@ -99,7 +99,8 @@ covers the training-job equivalent. Docs: `inference/ssh.mdx`.
 
 ## Gotchas
 
-- **Watch keeps the dev deployment warm** — no scale-to-zero while watching. Stop it when not iterating.
+- **Watch keeps the dev deployment warm by default.** Stop it when not iterating, or disable keep-warm with
+  `--no-sleep=false` on `truss watch`.
 - **Atomic edits**: file writes that rename-into-place are seen by the watcher as one FS event. Bursts may collapse into
   one patch — usually fine; if it matters, wait for the marker between edits.
 - **Multi-remote setups** require `--remote <name>`. If `truss push` errors with "Multiple remotes available," check

@@ -152,6 +152,6 @@ per-request log filtering does not work. FastAPI and Flask snippets are at
 
 - Custom Docker images: <https://docs.baseten.co/development/model/custom-server>
 - Config reference (`docker_server`, `base_image`, `no_build`): <https://docs.baseten.co/reference/truss-configuration>
-- Private registries: <https://docs.baseten.co/development/model/private-registries>
+- Private registries: <https://docs.baseten.co/development/model/dependencies>
 - Calling deployed models (sync/async/streaming): <https://docs.baseten.co/inference/calling-your-model>
 - Examples: <https://github.com/basetenlabs/truss-examples>
