@@ -7,6 +7,7 @@
 # Required env: BASETEN_MCP_KEY (parent runner has it; we forward via trussrc).
 set -euo pipefail
 : "${BASETEN_MCP_KEY:?required}"
+: "${FIXTURE_MODEL_NAME:?required}"
 
 script_dir=$(cd "$(dirname "$0")" && pwd)
 eval_root=$(cd "$script_dir/../../.." && pwd)
@@ -22,4 +23,16 @@ api_key = $BASETEN_MCP_KEY
 remote_url = https://app.baseten.co
 EOF
 
-HOME="$tmp" "$truss" push --publish --remote baseten "$fixture_dir" >/dev/null 2>&1
+# Keep the embedded name aligned with the target, including downloaded configs.
+cp -R "$fixture_dir" "$tmp/fixture"
+"$eval_root/harness/.venv/bin/python" - "$tmp/fixture/config.yaml" "$FIXTURE_MODEL_NAME" <<'PYTHON'
+import sys
+from pathlib import Path
+import yaml
+path = Path(sys.argv[1])
+config = yaml.safe_load(path.read_text())
+config["model_name"] = sys.argv[2]
+path.write_text(yaml.safe_dump(config, sort_keys=False))
+PYTHON
+
+HOME="$tmp" "$truss" push --promote --wait --timeout-seconds 300 --model-name "$FIXTURE_MODEL_NAME" --remote baseten "$tmp/fixture" >/dev/null 2>&1

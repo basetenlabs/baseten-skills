@@ -1,5 +1,9 @@
 # `baseten` skill — evaluation report
 
+> Historical results from April 2026, not validation of the current skill. The discussion of `weights` below
+> describes that sweep: current docs recommend BDN `weights` and supersede `model_cache`.
+> The [September refresh and evaluations](results/2026-09-09.md) document current coverage, observed regressions, and rubric corrections.
+
 How much does the `baseten` skill (plus its associated MCP servers) actually
 help a capable coding agent work with Baseten? This report measures it on a
 16-task suite spanning the realistic surface of the platform.
@@ -248,6 +252,39 @@ corpus that mixes current and superseded guidance can mislead a model that
 trusts the first plausible match. Knowing which advice is current is part of
 what the skill provides.
 
+## Using another model API
+
+The runner accepts `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN`. For an Anthropic-compatible provider, set
+`ANTHROPIC_BASE_URL`, the provider credential in `ANTHROPIC_AUTH_TOKEN`, and `ANTHROPIC_MODEL` or `--model`.
+Baseten Model APIs were verified through `https://inference.baseten.co` using `zai-org/GLM-5.2-Fast`.
+Keep credentials in the gitignored `evals/baseten/.env` or the environment, never in command arguments or tracked files.
+
+`BASETEN_MCP_KEY` remains the separate credential for eval workspace operations. Verify fixture ownership before
+running mutation cases. To use fresh fixtures, pass `--fixtures-path` with an external JSON mapping. Each fixture
+can include `FIXTURE_MODEL_NAME`; the broken-deployment reset requires it to target the right model.
+
+Raw artifacts default to a directory under the system temporary directory. `--artifact-root` selects another location
+outside this repo, without ancestor `.claude/skills` or `.agents/skills` directories. The runner rejects ambient skills,
+provider errors, and invalid grading rather than counting them as model-quality failures. Custom-provider costs are
+reported as unavailable because Claude Code's price table is not provider billing data.
+
+For a version comparison, use `--skill-source /path/to/previous/baseten`; prompts and assertions still come from the
+current repo. Freeze both skill directories before running. The runner records their content hashes and the rubric
+and fixture hashes. Fixture locks serialize resets and execution across runner processes using the same model and key.
+
+Collect the refreshed `s0b1d1,s1b1d1` and previous `s1b1d1` stats separately, then compare matched tool configurations:
+
+```sh
+uv run --project evals/baseten/harness python -m baseten_skills_evals.compare \
+  --current /tmp/current-stats.jsonl --previous /tmp/previous-stats.jsonl \
+  --evals skills/baseten/evals/evals.json --out /tmp/comparison.json
+```
+
+This comparison rejects missing tasks, unequal repetitions, or mismatched models, providers, rubrics, and fixture maps.
+Its confidence intervals resample paired tasks; one repetition does not estimate within-task model variance.
+Use `--ids` for an explicitly selected task subset. Shared live fixtures retain deployment history after a reset, so operational deltas
+are descriptive. The runner does not yet provision independent, matched fixtures per configuration.
+
 ## Reproducing
 
 ```bash
@@ -259,11 +296,12 @@ uv run python -m baseten_skills_evals.runner \
     --modes s0b0d0,s0b0d1,s0b1d1,s1b0d1,s1b1d1 \
     --runs 4 \
     --num-workers 8 \
-    --model claude-opus-4-7
+    --model claude-opus-4-7 \
+    --stats-path /tmp/current-stats.jsonl
 
 uv run python -m baseten_skills_evals.analyze \
-    --stats ../results/stats.jsonl \
-    --out report.md
+    --stats /tmp/current-stats.jsonl \
+    --out /tmp/report.md
 ```
 
 For unattended sweeps see [`bin/codespace_run_sweep.sh`](bin/codespace_run_sweep.sh).
