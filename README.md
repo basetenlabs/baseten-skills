@@ -97,7 +97,7 @@ needed automatically; alternatively you can invoke it with `/baseten`.
 
 ## Evaluation results
 
-These are historical April 2026 results. The [September refresh](evals/baseten/results/2026-09-09.md) has not yet completed a new behavioral sweep.
+These are historical April 2026 results. The [September refresh](evals/baseten/results/2026-09-09.md) completed 63 initial evaluations and six corrected follow-ups; the results do not establish a quality improvement.
 
 We measured the `baseten` skill against the bare Claude Opus 4.7 baseline across 16 tasks spanning model
 authoring, integration, operate, debug, and tune workflows. Five configurations × 4 runs × 16 evals = 320 runs.
