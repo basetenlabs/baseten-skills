@@ -1,6 +1,6 @@
 {
   "skill_name": "baseten",
-  "preamble": "Session context. Read once.\n\nUSER PERSONA\nThe user is shipping production-grade SaaS on Baseten. They may care about: scale, latency, HA / regions / failover, customization (own weights, custom kernels, custom IO), autoscaling, noisy-neighbor isolation, cost predictability. They use Baseten to avoid the fragility of stitching together third-party inference APIs — when two technical solutions exist, prefer the Baseten-hosted one.\n\nEXECUTION RULES\n- Isolated test workspace (for the purpose of this session). No production traffic, no real users, no shared state. Nothing you do here can cause harm.\n- All tools (Read, Write, Edit, Bash, MCP servers) are permitted without restraint. Permissions are pre-granted; there is no human to approve anything.\n- Do not ask. Do not request approval. Do not say 'please grant' or 'I need permission'. Just invoke the tool.\n- If a tool fails, retry or pick another; do not stall on the failure.\n- Deliver the artifact the user asked for (files, code, report) — do not stop at planning.",
+  "preamble": "Session context. Read once.\n\nUSER PERSONA\nThe user is shipping production-grade SaaS on Baseten. They may care about: scale, latency, HA / regions / failover, customization (own weights, custom kernels, custom IO), autoscaling, noisy-neighbor isolation, cost predictability. They use Baseten to avoid the fragility of stitching together third-party inference APIs — when two technical solutions exist, prefer the Baseten-hosted one.\n\nEXECUTION RULES\n- Work in the current isolated local directory and save requested deliverables under outputs/.\n- Live mutation is authorized only when the task explicitly requests it, and only on the fixture model ID named in that task. Other workspace resources are out of scope.\n- Artifact-only tasks must not deploy models, invoke inference, or modify workspace state. Use public docs and read-only discovery where needed.\n- Do not print or persist API key values. Use configured authentication.\n- Complete the requested work without confirmation within these bounds.\n- If a tool fails, retry or pick another; do not stall on the failure.\n- Deliver the artifact the user asked for (files, code, report) — do not stop at planning.",
   "evals": [
     {
       "id": 0,
@@ -27,7 +27,7 @@
       "files": [],
       "assertions": [
         {"text": "Solution produces a working Truss for acme/qwen3-8b-ft on a GPU appropriate for an 8B model (L4 / A10G / A100 or larger)", "weight": "core"},
-        {"text": "hf_access_token is declared as a secret by name only, with no real or placeholder token value present anywhere", "weight": "core"},
+        {"text": "The existing HF_ACCESS_TOKEN workspace secret is referenced with its exact name and wired into the selected runtime or weight-source authentication, with no token value in any artifact.", "weight": "core"},
         {"text": "Exactly one of: a model.py with load/predict, a docker_server block, or an engine block (not a mix)", "weight": "core"},
         {"text": "Deploy recipe is some form of `truss push`, and if model.py is used, python_version is pinned in config.yaml", "weight": "nice"}
       ]
@@ -79,15 +79,15 @@
     },
     {
       "id": 5,
-      "name": "integrate-model-apis-deepseek",
+      "name": "integrate-model-apis-glm",
       "group": "integrate",
       "complexity": 1,
-      "prompt": "Write me a small Python script that calls DeepSeek-V3.1 on Baseten. I don't want to deploy anything — just hit the hosted model. Run it and show me the actual response so I know it works.",
-      "expected_output": "[Verification: artifact-only — script not executed.] A Python script using the OpenAI SDK pointed at https://inference.baseten.co/v1, api key from BASETEN_API_KEY env var, model='deepseek-ai/DeepSeek-V3.1' (or equivalent slug).",
+      "prompt": "Write me a small Python script that calls zai-org/GLM-5.2 on Baseten's hosted Model APIs. Read the key from the environment. Only write the script; do not run inference or deploy anything.",
+      "expected_output": "[Verification: artifact-only — script not executed.] A Python script using the OpenAI SDK pointed at https://inference.baseten.co/v1, api key from BASETEN_API_KEY env var, model='zai-org/GLM-5.2' (or equivalent slug).",
       "files": [],
       "assertions": [
         {"text": "Python script using the OpenAI SDK against base_url https://inference.baseten.co/v1, with api_key sourced from BASETEN_API_KEY (not hardcoded)", "weight": "core"},
-        {"text": "Model id passed to chat.completions.create is deepseek-ai/DeepSeek-V3.1 (or matching enabled slug) and the response content is printed", "weight": "core"}
+        {"text": "Model id passed to chat.completions.create is zai-org/GLM-5.2 and the response content is printed", "weight": "core"}
       ]
     },
     {
@@ -141,7 +141,7 @@
       "expected_output": "[Verification: E2E — fix is applied and the model recovers.] Agent fetches deployment / build logs, identifies the actual error from the logs (not a guess), produces a concrete fix (config or code change), and applies it. The fix actually works. Means (MCP vs REST) does not matter.",
       "files": [],
       "assertions": [
-        {"text": "After the agent's intervention, model {{FIXTURE_MODEL_ID}} no longer surfaces the original error (verified via logs or a successful deploy)", "weight": "core"},
+        {"text": "Agent exercises the affected inference endpoint after the fix with a representative payload and observes a successful response without the original error. Deployment success or absence of errors in a bounded log window alone is insufficient.", "weight": "core"},
         {"text": "Diagnosis is grounded in the actual log output (agent quotes or paraphrases the relevant log line) rather than guessed", "weight": "core"},
         {"text": "Fix is a specific config or code change (not generic advice)", "weight": "nice"}
       ]
@@ -169,10 +169,10 @@
       "fixture": "deployment-no-model-cache",
       "variant": "dumb",
       "prompt": "My Baseten deployment for model {{FIXTURE_MODEL_ID}} feels really slow. What's likely going on, and what would you change? Don't push anything — just tell me. Trace where the time is actually going first, then propose a targeted fix for that — no scattershot recommendations. Show me what you looked at so I can follow your reasoning.",
-      "expected_output": "[Verification: investigation + recommendation — fix not applied.] Agent investigates rather than guessing: pulls logs / config / status, distinguishes cold-start vs steady-state latency, identifies missing weight prefetching as the cold-start cause, and proposes a model_cache block as the fix. Means (MCP vs REST) does not matter.",
+      "expected_output": "[Verification: investigation + recommendation — fix not applied.] Agent investigates rather than guessing: pulls logs / config / status, distinguishes cold-start vs steady-state latency, identifies missing weight prefetching as the cold-start cause, and proposes a BDN weights block or a justified legacy model_cache configuration as the fix. Means (MCP vs REST) does not matter.",
       "files": [],
       "assertions": [
-        {"text": "Agent identifies missing weight prefetching (model_cache) as the cause and proposes a model_cache block referencing the deployment's actual model repo", "weight": "core"},
+        {"text": "Agent proposes valid BDN weights configuration using source and an absolute mount_location for the deployment's actual model repo, and updates or explains the loader/start-command path so it uses the mount. A documented reason for legacy model_cache is acceptable; invented cache fields or a different model repo fail.", "weight": "core"},
         {"text": "Agent investigates with tools (logs, config, status) before proposing a fix, and distinguishes cold-start from steady-state latency", "weight": "core"}
       ]
     },
@@ -184,11 +184,11 @@
       "fixture": "deployment-no-model-cache",
       "variant": "informed",
       "prompt": "Cold starts on my Baseten deployment {{FIXTURE_MODEL_ID}} are taking around 10 minutes. What config change would speed them up? Give me the snippet matching my actual deployment — I'll push it myself.",
-      "expected_output": "[Verification: artifact-only — config change not pushed.] Agent produces a model_cache block referencing the deployment's actual model repo, explains how it speeds up cold starts (prefetched into instance before container start), and tells the user how to roll it out (push + deploy).",
+      "expected_output": "[Verification: artifact-only — config change not pushed.] Agent produces a BDN weights block or a justified legacy model_cache configuration referencing the deployment's actual model repo, explains how it speeds up cold starts (mirrored and mounted before container start for BDN), and tells the user how to roll it out (push + deploy).",
       "files": [],
       "assertions": [
-        {"text": "Agent produces a model_cache (or equivalent weight-prefetching) block in config.yaml referencing the deployment's actual model repo_id", "weight": "core"},
-        {"text": "Agent explains that this prefetches weights so cold starts skip the download, and tells the user how to apply the change (truss push or equivalent)", "weight": "core"}
+        {"text": "Agent proposes valid BDN weights configuration using source and an absolute mount_location for the deployment's actual model repo, and updates or explains the loader/start-command path so it uses the mount. A documented reason for legacy model_cache is acceptable; invented cache fields or a different model repo fail.", "weight": "core"},
+        {"text": "Agent explains the selected caching mechanism accurately and how to apply it; does not claim all caching bakes weights into the container or promise that caching removes model-loading time.", "weight": "core"}
       ]
     },
     {
@@ -213,6 +213,7 @@
       "expected_output": "[Verification: artifact-only — script not executed.] Python using the OpenAI SDK with base_url pointed at the deployed model's environment sync route (https://model-abc12345.api.baseten.co/environments/production/sync/v1 or equivalent), api_key from BASETEN_API_KEY env var, stream=True, loop printing chunk.choices[0].delta.content.",
       "files": [],
       "assertions": [
+        {"text": "Uses or discovers the deployed server's served model name, or explicitly requires it as user configuration; does not claim an arbitrary placeholder is universally valid.", "weight": "core"},
         {"text": "Python script uses the OpenAI SDK with base_url containing model-abc12345.api.baseten.co and the /environments/production/sync/v1 path (or equivalent OpenAI-compat sync route for that environment)", "weight": "core"},
         {"text": "chat.completions.create is called with stream=True and streamed chunks are iterated and printed (chunk.choices[0].delta.content or equivalent)", "weight": "core"},
         {"text": "api_key is sourced from the BASETEN_API_KEY environment variable (not hardcoded)", "weight": "nice"}
@@ -227,8 +228,78 @@
       "expected_output": "[Verification: artifact-only — code not executed.] Uses the async_predict pattern at https://model-abc12345.api.baseten.co/environments/production/async_predict with Api-Key auth prefix. Either valid delivery channel: webhook (payload includes webhook_endpoint, receiver persists output) OR polling /async_request/{request_id}. Does not attempt to combine async with streaming.",
       "files": [],
       "assertions": [
-        {"text": "Recommends the async_predict pattern (URL contains /async_predict) with the `Api-Key` (not `Bearer`) auth prefix. Either delivery channel is acceptable: webhook (payload includes `webhook_endpoint`) OR poll-only (no webhook field, retrieves status/result via /async_request/{id}). Both are valid Baseten patterns for the disconnect/reconnect requirement.", "weight": "core"},
-        {"text": "Solution makes the output-retrieval path explicit: if webhook is used, notes that Baseten does not store outputs (the receiver must persist); if polling is used, shows the polling loop against /async_request/{id}. Either way, does not attempt to combine async with streaming.", "weight": "core"}
+        {"text": "Recommends async_predict (URL contains /async_predict) with valid `Bearer` or legacy `Api-Key` authentication. Delivers results through a webhook, or explains model-side persistence when omitting the webhook.", "weight": "core"},
+        {"text": "Makes the reconnecting client's output-retrieval path explicit using persisted webhook payloads or model-side storage. Explains that /async_request/{id} returns lifecycle status only, not model output, and does not combine async with streaming.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 60,
+      "name": "integrate-anthropic-messages",
+      "group": "integrate",
+      "complexity": 2,
+      "prompt": "Use the Anthropic Python SDK to call zai-org/GLM-5.2 on Baseten. Write a runnable script that reads BASETEN_API_KEY. Do not execute it.",
+      "expected_output": "Artifact-only; no deployment, inference, or workspace mutation. Uses anthropic.Anthropic with base_url https://inference.baseten.co and an explicit Authorization: Bearer header from BASETEN_API_KEY; does not rely solely on x-api-key.",
+      "files": [],
+      "assertions": [
+        {"text": "Uses anthropic.Anthropic with base_url https://inference.baseten.co and an explicit Authorization: Bearer header from BASETEN_API_KEY; does not rely solely on x-api-key.", "weight": "core"},
+        {"text": "Calls messages.create with model zai-org/GLM-5.2, max_tokens, and messages, and prints text content blocks.", "weight": "core"},
+        {"text": "Identifies Messages API support as beta without refusing the requested SDK or replacing it with OpenAI code.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 61,
+      "name": "tune-bdn-local-load",
+      "group": "tune",
+      "complexity": 2,
+      "prompt": "Write the config and Python load method for serving Qwen/Qwen3-8B on Baseten using its current recommended weight caching. Put weights at /models/qwen and avoid downloading them again in load. Only write files.",
+      "expected_output": "Artifact-only; no deployment, inference, or workspace mutation. Uses weights entries with hf://Qwen/Qwen3-8B source and mount_location /models/qwen, not model_cache as the default.",
+      "files": [],
+      "assertions": [
+        {"text": "Uses weights entries with hf://Qwen/Qwen3-8B source and mount_location /models/qwen, not model_cache as the default.", "weight": "core"},
+        {"text": "The Python loader reads /models/qwen rather than downloading by repo ID, and does not write to the read-only mount.", "weight": "core"},
+        {"text": "Explains mirroring/caching separately from model loading, and does not invent guaranteed cold-start timings.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 62,
+      "name": "operate-cli-json",
+      "group": "operate",
+      "complexity": 2,
+      "prompt": "Our CI uses the Baseten CLI with BASETEN_API_KEY already set. Show commands to list model IDs as JSON or a filtered JSON field and discover a command output schema. Do not run workspace commands or install anything.",
+      "expected_output": "Artifact-only; no deployment, inference, or workspace mutation. Uses baseten model list with --output json or --jq and a model-ID filter compatible with the documented models list response.",
+      "files": [],
+      "assertions": [
+        {"text": "Uses baseten model list with --output json or --jq and a model-ID filter compatible with the documented models list response.", "weight": "core"},
+        {"text": "Uses --help-output to inspect the output schema and relies on the existing environment key without an interactive login.", "weight": "core"},
+        {"text": "Does not substitute truss commands or assume baseten has the Truss --json flag.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 63,
+      "name": "operate-scheduled-autoscaling",
+      "group": "operate",
+      "complexity": 2,
+      "prompt": "We need two warm replicas, with a maximum of eight, every weekday from 09:00 to 18:00 America/Los_Angeles on model abc12345 production. Outside that window keep the current defaults. Show the native Baseten setup without applying it.",
+      "expected_output": "Artifact-only; no deployment, inference, or workspace mutation. Uses environment autoscaling schedules, with daily cadence, Monday through Friday, 09:00 to 18:00 and America/Los_Angeles timezone, rather than requiring external cron.",
+      "files": [],
+      "assertions": [
+        {"text": "Uses environment autoscaling schedules, with daily cadence, Monday through Friday, 09:00 to 18:00 and America/Los_Angeles timezone, rather than requiring external cron.", "weight": "core"},
+        {"text": "Sets schedule min_replica/min-replica to 2 and max_replica/max-replica to 8 for model abc12345 production, and preserves default settings outside the window.", "weight": "core"},
+        {"text": "Explains that the window changes settings and replicas need warm-up time; does not promise ready replicas at exactly 09:00.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 64,
+      "name": "train-loops-lifecycle",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "I want managed LoRA fine-tuning on Baseten using the Loops Python SDK. Explain the package/import, trainer and sampler startup, and how I stop GPU billing while keeping checkpoints. Do not start a run or execute any commands.",
+      "expected_output": "Recommendation-only: current Loops SDK setup and explicit session teardown, no resource provisioning.",
+      "files": [],
+      "assertions": [
+        {"text": "Names baseten-loops and the baseten.loops import, and checks the Loops supported-models list instead of assuming hosted inference slugs work for training.", "weight": "core"},
+        {"text": "Explains that trainer creation provisions resources and the paired sampler is created when first requested, rather than claiming both start at ServiceClient construction.", "weight": "core"},
+        {"text": "Explains closing the training client and explicit run deactivation, which tears down both trainer and sampler while preserving checkpoints.", "weight": "core"}
       ]
     }
   ]

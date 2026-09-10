@@ -99,8 +99,8 @@ Key points:
 
 Each environment's autoscaling controls independently:
 
-- `min_replicas` (default 0 enables scale-to-zero).
-- `max_replicas`.
+- `min_replica` (default 0 enables scale-to-zero).
+- `max_replica`.
 - `concurrency_target` per replica.
 - `autoscaling_window` (smoothing period).
 - `scale_down_delay` (how long to wait before reducing replicas).
@@ -109,6 +109,18 @@ Set per environment from the dashboard or the management API
 (<https://docs.baseten.co/reference/management-api/deployments/autoscaling/updates-a-deployments-autoscaling-settings>).
 
 Full concept docs: <https://docs.baseten.co/deployment/autoscaling/overview>.
+
+## Scheduled autoscaling
+
+For predictable traffic windows, use native environment autoscaling schedules. Configure daily, hourly, or one-time
+windows with a shared timezone; outside those windows, the default environment settings apply. Start the window before
+traffic arrives to allow replicas to warm up. Saving a schedule does not guarantee replicas are ready.
+
+Use `baseten model environment autoscaling-schedule --help` or the dashboard. The Management API accepts
+`autoscaling_schedule_settings` on the environment update endpoint. Read the current schema before constructing a PATCH:
+each schedule entry is a full create/replacement, omitted schedules remain unchanged, and deletion is explicit.
+
+Source and validation rules: <https://docs.baseten.co/deployment/autoscaling/schedules>.
 
 ## Regional environments
 
@@ -136,7 +148,7 @@ Programmatic equivalents live in `management-api.md`.
 
 ## CI/CD
 
-The normal CI/CD shape is `truss push` with some mix of `--wait`, `--tail`, `--json`, `--environment`,
+The normal CI/CD shape is `truss push` with some mix of `--wait`, `--tail`, `--output json`, `--environment`,
 `--include-git-info`, and `--labels`. See `truss-cli.md` for specifics. <https://docs.baseten.co/deployment/ci-cd> has
 worked examples.
 
@@ -159,8 +171,8 @@ Broader observability (metrics export, alerting, tracing): <https://docs.baseten
 - **Rolling deployments suspend autoscaling** for the environment for their whole duration. If replicas look wrong
   during a rollout, this is why.
 - **`production` is reserved** and cannot be deleted without deleting the model.
-- **Development deployments scale to zero** (unless a `truss watch` is active, which keeps them warm). Published
-  deployments do not scale to zero unless autoscaling is configured that way.
+- **Development deployments scale to zero** (unless kept warm, for example by the default `truss watch` behavior).
+  Published deployments do not scale to zero unless autoscaling is configured that way.
 - **Promotion may or may not create a new deployment.** If you need `load()` to re-run on promotion, enable "Re-deploy
   when promoting" on the environment.
 - **Chains cannot use rolling deployments.** Promotions for Chains are immediate traffic swaps.

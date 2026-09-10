@@ -94,25 +94,30 @@ In `model.py`, read them from the `secrets` dict passed to `__init__`. In a `doc
 secret values to files under a configurable path (see `truss-custom-servers.md`). Never commit a real secret value to
 `config.yaml`.
 
-## `model_cache` (large weights)
+## Cached weights and BDN
 
-Heavy models should download weights at **image build** time, not at model load, so replicas cold-start fast.
+For new deployments, use BDN's `weights` configuration. BDN mirrors the source on push, caches files across cluster and
+node storage, and mounts them read-only before the container starts. Load from `mount_location` in `model.py` or your
+server's start command so the runtime uses the mounted files instead of downloading from Hugging Face again.
 
 ```yaml
-model_cache:
-  - repo_id: meta-llama/Llama-3.1-8B-Instruct
-    revision: main
-    allow_patterns:
-      - "*.safetensors"
-      - "tokenizer*"
-      - "*.json"
+weights:
+  - source: "hf://Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218"
+    mount_location: /models/qwen
+    allow_patterns: ["*.safetensors", "*.json", "tokenizer.*"]
 ```
 
-The weights are baked into the image (or a layer) and available on disk when the container starts. Pair with a Hugging
-Face access secret if the repo is gated.
+For private or gated sources, add `auth: {auth_method: CUSTOM_SECRET, auth_secret_name: hf_access_token}` to that weight
+source and ensure the named secret exists. Pin a real upstream revision for reproducibility. See
+<https://docs.baseten.co/development/model/bdn> for source schemes and authentication.
 
-For the fastest cold starts on very large models, Baseten Delivery Network (BDN) streams weights at container start
-instead of baking them in — see `development/model/bdn`.
+`model_cache` is superseded. Run `truss migrate` on an existing configuration and inspect both the generated config and
+the model's load path. Keep `model_cache` when its documented capabilities are needed, such as quantization that
+processes downloaded weights or custom download timing through `lazy_data_resolver`.
+
+Legacy `model_cache` with `use_volume: true` downloads to distributed storage at runtime. Image-bundled weights are a
+different legacy mode; do not describe all `model_cache` configurations as baking weights into an image. See
+<https://docs.baseten.co/development/model/model-cache>.
 
 **Multi-variant repos: narrow `allow_patterns`, set `variant` at load.** HF repos for many diffusion / vision models
 ship both fp32 and fp16 (sometimes bf16) copies of the same weights. A naive `allow_patterns: ["*.safetensors"]` pulls
@@ -156,7 +161,7 @@ Engine-only deployments skip `model.py` and skip a custom server: the engine run
   `/v1/chat/completions` endpoint.
 
 When to pick which engine, and the exact `config.yaml` shape for each, is covered on the docs site under `/engines`.
-Confirm with the user which engine they want before generating config; do not guess.
+Choose an engine using the workload and current supported-architecture documentation; preserve an explicit user choice.
 
 ## `runtime`, `build`, and advanced blocks
 
@@ -172,8 +177,8 @@ Confirm with the user which engine they want before generating config; do not gu
 - **`instance_type` overrides `cpu`/`memory`/`accelerator`.** Setting both is confusing; pick one style.
 - **`model_metadata.example_model_input` is publicly visible** on the deployment. Do not put credentials, PII, or
   internal data there.
-- **`model_cache` downloads at build time, not load time.** If the user complains about slow cold starts, check whether
-  weights are coming from disk or downloading at load.
+- **BDN mounts are read-only.** Write generated files elsewhere. For slow cold starts, measure mirroring, image pull,
+  weight transfer, and model loading separately before choosing a fix.
 - **Gated Hugging Face repos need a secret** (`hf_access_token` is the conventional name) **and** the secret must be
   configured in the workspace.
 - **Pinned Python, pinned packages.** Unpinned `requirements` produce non-reproducible builds; mismatched

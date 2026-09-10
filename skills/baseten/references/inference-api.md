@@ -12,8 +12,9 @@ concepts).
 
 ## Authentication
 
-Every request sends an `Authorization: Api-Key $BASETEN_API_KEY` header. API keys are created at
-<https://app.baseten.co/settings/api_keys>.
+Send `Authorization: Bearer $BASETEN_API_KEY`. The legacy `Authorization: Api-Key <key>` scheme remains accepted. API
+keys are created at <https://app.baseten.co/settings/api_keys>. Source:
+<https://docs.baseten.co/inference/calling-your-model#authentication>.
 
 ## Connection reuse (low-latency clients)
 
@@ -30,7 +31,7 @@ import os
 import requests
 
 session = requests.Session()
-session.headers.update({"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"})
+session.headers.update({"Authorization": f"Bearer {os.environ['BASETEN_API_KEY']}"})
 
 def predict(payload: dict) -> dict:
     response = session.post(
@@ -47,14 +48,14 @@ Reuse the same session for streaming (`session.post(..., stream=True)`).
 ### `httpx`
 
 Sync: one `httpx.Client` created at app startup, closed on shutdown. Async: one `httpx.AsyncClient` per event loop (or
-app lifespan). Set `headers` on the client so every call inherits `Authorization: Api-Key …`.
+app lifespan). Set `headers` on the client so every call inherits `Authorization: Bearer …`.
 
 ```python
 import os
 import httpx
 
 client = httpx.Client(
-    headers={"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"},
+    headers={"Authorization": f"Bearer {os.environ['BASETEN_API_KEY']}"},
     timeout=60.0,
 )
 # client.post(url, json=payload) for each call; client.close() on shutdown
@@ -138,7 +139,7 @@ import requests
 
 model_id = os.environ["MODEL_ID"]
 session = requests.Session()
-session.headers.update({"Authorization": f"Api-Key {os.environ['BASETEN_API_KEY']}"})
+session.headers.update({"Authorization": f"Bearer {os.environ['BASETEN_API_KEY']}"})
 
 response = session.post(
     f"https://model-{model_id}.api.baseten.co/environments/production/predict",
@@ -185,18 +186,21 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="baseten",
+    model=os.environ["SERVED_MODEL_NAME"],  # match the server's --served-model-name
     messages=[{"role": "user", "content": "Hello"}],
     stream=True,
 )
 for chunk in response:
+    if not chunk.choices:
+        continue
     delta = chunk.choices[0].delta.content
     if delta:
         print(delta, end="")
 ```
 
-The `model=` argument in the SDK is a placeholder (`"baseten"` is idiomatic); the actual model is the one deployed at
-that URL.
+Set `SERVED_MODEL_NAME` to the name configured by the server (for vLLM, `--served-model-name`). Inspect the deployed
+config or its `/sync/v1/models` response instead of assuming an arbitrary value is accepted. The base URL selects the
+deployment; its server validates the model name. See <https://docs.baseten.co/inference/calling-your-model#openai-sdk>.
 
 ## Sync endpoint (custom servers)
 
@@ -231,6 +235,9 @@ Key properties:
 
 - `max_time_in_queue_seconds` controls queue timeout; maximums move over time, so confirm current limits in the docs.
 - **Async is not compatible with streaming output.**
+- **Status polling never returns model output.** `webhook_endpoint` is optional, but without a webhook the model must
+  persist its own output (for example in `postprocess()`). A reconnecting client retrieves that saved output; polling
+  `/async_request/{request_id}` only reports lifecycle state.
 - **Baseten does not store model outputs.** If webhook delivery fails after all retries, the result is lost. Design your
   webhook to be idempotent and, if durability matters, have it persist the payload before returning 200. See
   <https://docs.baseten.co/inference/async#webhook-delivery> for current retry behavior.
@@ -260,8 +267,8 @@ for pre-warming right before a latency-sensitive workload.
 - **URL structure matters.** `/environments/production/predict` is different from `/production/predict`. Both hit
   production, but the former names the environment explicitly; the latter is the shorthand. Regional endpoints accept
   neither and require the bare-path form.
-- **The `model=` field in the OpenAI SDK is a placeholder.** The actual model is determined by the base URL. Setting it
-  to something descriptive is fine; setting it to the name of an unrelated model does not change routing.
+- **Match the served model name.** The base URL selects the deployment, but the server can reject an unknown `model=`
+  value. Use its configured name or discover it with `/sync/v1/models`.
 - **Async never streams.** If the user needs both (long job with incremental output), this is a design constraint, not a
   client bug.
 - **Failed webhook delivery after retries loses the result.** Log and persist on the webhook side before returning 200.
@@ -270,7 +277,7 @@ for pre-warming right before a latency-sensitive workload.
   TLS/handshake latency every time. Use `requests.Session`, a long-lived `httpx` client, or a process-scoped OpenAI
   client (see Connection reuse).
 - **Gates on `development` targets return 404 when the dev deployment has scaled to zero** between requests.
-  `truss watch` keeps it warm; outside of `watch`, consider `/wake` or the scale-to-zero behavior.
+  `truss watch` keeps it warm by default; outside of `watch`, consider `/wake` or the scale-to-zero behavior.
 - **Custom server `sync` routing only works for routes the server actually exposes.** `predict_endpoint` is the shortcut
   for the primary inference route; everything else uses `/sync/{route}`.
 

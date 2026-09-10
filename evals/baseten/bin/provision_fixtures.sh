@@ -93,7 +93,7 @@ fi
 # Emit fixtures.json so the runner can resolve FIXTURE_MODEL_ID placeholders.
 cat > "$repo_root/skills/baseten/evals/fixtures.json" <<EOF
 {
-  "broken-deployment":          {"FIXTURE_MODEL_ID": "$(get_id cheerful-otter)"},
+  "broken-deployment":          {"FIXTURE_MODEL_ID": "$(get_id cheerful-otter)", "FIXTURE_MODEL_NAME": "cheerful-otter"},
   "two-deployments-regression": {"FIXTURE_MODEL_ID": "$(get_id mellow-koala)"},
   "deployment-no-model-cache":  {"FIXTURE_MODEL_ID": "$(get_id breezy-walrus)"},
   "model-with-dev-deployment":  {"FIXTURE_MODEL_ID": "$(get_id jolly-narwhal)"},
