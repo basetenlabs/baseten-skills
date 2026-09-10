@@ -1,48 +1,51 @@
 # Baseten Skills
 
-Agent DX bundle — [`baseten` skill](skills/baseten/) tuned for [Baseten](https://www.baseten.co) backend MCP, Docs MCP and CLI.
+Use the [`baseten` skill](skills/baseten/) with the [Baseten](https://www.baseten.co) backend and documentation Model Context Protocol (MCP) servers to work with Baseten from your coding agent.
 
-The skill brings Baseten guidance into your agent alongside the backend MCP, Docs MCP, and CLI.
+You can ask your agent to:
+
+- Diagnose deployment failures by inspecting logs and proposing fixes.
+- Promote deployments, update autoscaling, and test inference.
+- Check the status of models in your workspace.
+- Find product guidance in the Baseten documentation.
+- Write deployment configurations and API clients.
+
 See [evaluation results](#evaluation-results) for measured performance and coverage.
 
-What you can do without leaving the chat:
+## Set up the toolkit
 
-* Debug live: "Why do I see this log line" "Fix my deploy" → agent pulls logs, finds stack trace, proposes fix.
-* Operate: Promote dev → prod, bump autoscaling for traffic spike, run a test predict.
-* Keep the overview: "What's deployed, healthy, cold?" One-shot status across your account, easy cleanups.
-* Skip the doc dive: Agent gets pointers to Baseten docs, blogposts and more in context.
-* Wire up automations: Plug it into your own agents or internal tools for reactive ops without glue code.
-* Install once, works everywhere: `npx add-mcp`, your API key, done. Uniform setup across 14+ coding agents.
-* Read-only by default, mutations gated via harness policy check.
+### Requirements
 
-## Set Up
+- To interact with your Baseten workspace, create an [API key with management permissions](https://app.baseten.co/settings/api_keys). Use a dedicated key so you can revoke it without affecting other work.
+- Install Node.js 18 or later to run the installation tools.
 
-### Requirements:
+### Install the toolkit
 
-* For interacting with your Baseten workspace, provide an API key with management permissions (you can get it from the 
-  [webapp](https://app.baseten.co/settings/api_keys)). We recommend using a purpose-dedicated key, so it can be independently revoked without impacting
-  other workstreams.
-* Node >= 18 (for the install tools)
+#### Install with your agent
 
-### Installation
+Set the `BASETEN_MCP_KEY` environment variable in your shell. Replace `...` with your API key.
 
-#### Agent-driven (recommended)
+On Linux or macOS:
 
-Set your key, then paste this into your agent:
-
-Linux/Mac:
 ```bash
 export BASETEN_MCP_KEY=...
 ```
 
-Windows (PowerShell or cmd.exe):
+On Windows with PowerShell:
+
 ```powershell
-$env:BASETEN_MCP_KEY = "..."   # PowerShell
-set BASETEN_MCP_KEY=...         # cmd.exe
+$env:BASETEN_MCP_KEY = "..."
 ```
 
-Then paste this into the agent of your choice:
+On Windows with Command Prompt:
+
+```bat
+set BASETEN_MCP_KEY=...
 ```
+
+Then paste the following instructions into your agent:
+
+```text
 Install the Baseten agent toolkit following instructions from `github.com/basetenlabs/baseten-skills`.
 
 - use `npx skills add` and `npx add-mcp`
@@ -50,9 +53,10 @@ Install the Baseten agent toolkit following instructions from `github.com/basete
 - The baseten backend server needs auth header `Authorization: Bearer $BASETEN_MCP_KEY` (or `Authorization: Bearer $env:BASETEN_MCP_KEY` in PowerShell). Run the install commands in a shell that has `BASETEN_MCP_KEY` set so the env var expands; don't read or inline the key value.
 ```
 
-#### Manual
+#### Install manually
 
-Linux/Mac:
+On Linux or macOS:
+
 ```bash
 export BASETEN_MCP_KEY=...
 npx skills add basetenlabs/baseten-skills -g -y
@@ -60,7 +64,8 @@ npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${B
 npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 ```
 
-Windows:
+On Windows with PowerShell:
+
 ```powershell
 $env:BASETEN_MCP_KEY = "..."
 npx skills add basetenlabs/baseten-skills -g -y
@@ -68,30 +73,24 @@ npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer $en
 npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 ```
 
-- `-g` global, `-y` auto-confirms all detected harnesses.
-- Harnesses that support env-var interpolation: point the MCP config at `$BASETEN_MCP_KEY` instead of baking the key in.
+- `-g` installs globally. `-y` confirms installation for all detected agents.
+- If your agent supports environment variable interpolation, reference `$BASETEN_MCP_KEY` in its MCP configuration.
 - Some agents prompt before reading skill reference files (they live outside your workspace). In Claude Code,
-  pre-approve via `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
+  allow these reads in `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
 
-The `truss` CLI is separate, needed for deployment authoring; see
-[CLI docs](https://docs.baseten.co/reference/cli/truss/overview):
+To create deployments, install the separate [Truss CLI](https://docs.baseten.co/reference/cli/truss/overview):
 
 ```bash
 uv tool install truss
 ```
 
-Components (skill, 2x MCPs, CLI) can be installed selectively, but work best in combination.
+You can install the skill, either MCP server, and the Truss CLI separately.
 
-## Getting started & Usage
+## Use the toolkit
 
-After installation, most agents require a restart.
+After installation, follow your agent's instructions to reload its configuration. If your agent supports `/mcp` or `/mcps`, use that command to check the MCP connections. If the backend connection fails, verify `BASETEN_MCP_KEY` in the agent's configuration.
 
-Check if the MCP servers connect with `/mcp` or `/mcps` (if not connected, verify the BASETEN_MCP_KEY in the harness 
-config file).
-
-You can start asking any questions or tasks related to Baseten, from chatting about the docs, to brainstorming 
-solution approaches, deploying and iterating on models or managing your workspace. Most agents trigger the skill as 
-needed automatically; alternatively you can invoke it with `/baseten`.
+Ask your agent to explain Baseten documentation, create a deployment, or manage your workspace. Agents that support automatic skill selection can load the skill when needed. If your agent supports skill commands, you can also invoke `/baseten`.
 
 ## Evaluation results
 
