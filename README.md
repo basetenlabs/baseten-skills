@@ -2,10 +2,8 @@
 
 Agent DX bundle — [`baseten` skill](skills/baseten/) tuned for [Baseten](https://www.baseten.co) backend MCP, Docs MCP and CLI.
 
-The April 2026 evals below found lower token usage and wall time with the MCP, while agents using raw REST API calls
-reached similar pass rates. The [September refresh](evals/baseten/results/2026-09-09.md) reports a new comparison and
-its limitations. Additionally, the MCP tool annotations allow agent
-harnesses formal gating of destructive operations, providing additional safeguards.
+The skill brings Baseten guidance into your agent alongside the backend MCP, Docs MCP, and CLI.
+See [evaluation results](#evaluation-results) for measured performance and coverage.
 
 What you can do without leaving the chat:
 
@@ -97,28 +95,14 @@ needed automatically; alternatively you can invoke it with `/baseten`.
 
 ## Evaluation results
 
-These are historical April 2026 results. The [September refresh](evals/baseten/results/2026-09-09.md) completed 63 initial evaluations and six corrected follow-ups; the results do not establish a quality improvement.
+The [September 9 evaluation](evals/baseten/results/2026-09-09.md) compared the refreshed skill, the June skill, and no skill on the same model with both MCP servers enabled.
 
-We measured the `baseten` skill against the bare Claude Opus 4.7 baseline across 16 tasks spanning model
-authoring, integration, operate, debug, and tune workflows. Five configurations × 4 runs × 16 evals = 320 runs.
+| Configuration | Mean assertion pass rate across 21 tasks |
+| --- | ---: |
+| No skill | 85.7% |
+| June skill | 85.7% |
+| Initial September skill | 81.7% |
 
-| Configuration                                      | Pass rate | Wall (s) | Cost ($) |
-|----------------------------------------------------|-----------|----------|----------|
-| Naked model (no skill, no MCP, no docs)            | 0.89      | 107      | 0.56     |
-| + docs MCP                                         | 0.85      | 110      | 0.66     |
-| + docs MCP + skill                                 | 0.87      | 136      | 0.73     |
-| + docs MCP + baseten MCP                           | 0.91      | 99       | 0.54     |
-| **+ docs MCP + baseten MCP + skill (full kit)**    | **0.97**  | **99**   | **0.55** |
+This 63-execution sweep used one repetition per configuration and task. It did **not establish a quality improvement**. After correcting client guidance and assertions, all six follow-up executions on tasks 50 and 51 passed. The final skill revision has only that targeted coverage; it has not received a full 21-task sweep. Rubric errors and shared fixture history limit the initial comparison.
 
-Highlights (95% CIs from cluster bootstrap over evals):
-
-- **Full kit lifts pass rate from 0.89 to 0.97** vs. naked Opus 4.7 (Δ +0.08, CI excludes 0). Quality gains compound
-  when skill and MCP are paired: adding either on top of the other is significant on its own.
-- **The baseten MCP cuts wall and cost roughly in half on backend-heavy tasks** with no quality cost. On operate
-  tasks (promote, autoscale, status), wall drops from 124s → 53s and cost from $0.82 → $0.35 when MCP is added
-  to a skill-loaded agent. Similar magnitudes on debug and tune.
-- **Opus has strong baseline Baseten knowledge** — most authoring tasks pass without the toolkit. The toolkit's
-  measurable value concentrates on tasks that need live workspace state (operate, debug, tune).
-
-Full methodology, marginal effects across all metrics, per-eval breakdowns, and per-group analysis:
-[**Full eval report**](evals/baseten/README.md).
+The [evaluation guide](evals/baseten/README.md) covers running a new comparison and indexes the dated reports, including earlier experiments with different models and suites.

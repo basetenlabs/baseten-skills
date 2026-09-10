@@ -23,3 +23,7 @@ Write a curated summary into `evals/<skill>/results/YYYY-MM-DD.md` and link it f
 - Takeaways that drove the changes in the PR.
 
 If multiple iterations happen on the same day, append to the same file. A new day starts a new file.
+
+Keep `evals/<skill>/README.md` as the current run guide and index of dated reports. Link new results there and update the root README's evaluation summary. Keep earlier experiments in their dated reports rather than mixing their tables into the current summary. For Baseten, start with the [evaluation guide](evals/baseten/README.md).
+
+Name committed statistics by date and link them from the matching report. Record the model/provider, skill and rubric snapshots, tool configuration, repetitions, and fixture limitations. Separate targeted follow-ups from full-suite results, especially when assertions change. State which revision each run validates and whether the comparison actually establishes improvement; do not combine scores from different rubrics.

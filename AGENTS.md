@@ -8,6 +8,7 @@
   `pre-commit run --all-files` before pushing — CI enforces it.
 - Evaluation harness, methodology, and reproduction commands are in
   [`evals/baseten/README.md`](evals/baseten/README.md).
-  Canonical numbers live in `evals/baseten/results/stats.jsonl`.
+  Each dated report links its own statistics. `evals/baseten/results/stats.jsonl`
+  belongs only to the May 26, 2026 benchmark; do not overwrite it with new runs.
   Skill changes that affect agent behavior should ship with a re-run;
   see CONTRIBUTING.md "Running evals before merging".
