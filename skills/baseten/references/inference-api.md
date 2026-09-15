@@ -277,7 +277,8 @@ for pre-warming right before a latency-sensitive workload.
   TLS/handshake latency every time. Use `requests.Session`, a long-lived `httpx` client, or a process-scoped OpenAI
   client (see Connection reuse).
 - **Gates on `development` targets return 404 when the dev deployment has scaled to zero** between requests.
-  `truss watch` keeps it warm by default; outside of `watch`, consider `/wake` or the scale-to-zero behavior.
+  `baseten model push --watch` keeps it warm by default; outside of a watch loop, consider `/wake` or the scale-to-zero
+  behavior.
 - **Custom server `sync` routing only works for routes the server actually exposes.** `predict_endpoint` is the shortcut
   for the primary inference route; everything else uses `/sync/{route}`.
 

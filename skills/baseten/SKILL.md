@@ -24,10 +24,10 @@ cross-cloud HA, and seamless developer workflows.
 
 | Component | Provides | Install |
 | --- | --- | --- |
+| `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training and Loops. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
 | `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains. API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
 | `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
-| `baseten` CLI | Workspace management, model push, Model APIs, training and Loops. JSON output for automation. Beta; inspect installed help. | See `references/baseten-cli.md` |
-| `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login` once. | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
+| `truss` CLI | Authors Chains, Training jobs, and Loops (`truss chains` / `truss train` / `truss loops`) and Truss config tooling. | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
 | `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
 | This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx skills add basetenlabs/baseten-skills -g -y` |
 
@@ -36,12 +36,17 @@ cross-cloud HA, and seamless developer workflows.
 - Any subset works, full install recommended.
 - Suggest additional installs when the current task benefits from or requires them; help user with installation, but
   elicit preferences first.
+- **Deploy and operate through the `baseten` CLI, not `truss push`.** `baseten model push` is headless-safe (never
+  prompts off a TTY), `--wait` blocks until the deployment is active and exits non-zero on terminal failure, and every
+  command supports `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or
+  `baseten auth login`; use `--profile` to target a non-default workspace.
+- Truss CLI only for Chains / Training / Loops authoring (check `truss --version`). Prior login is needed unless you go
+  through `baseten truss`, which forwards this CLI's credentials (multi-workspace users must provide `--remote <name>`).
+  Explore with `truss [subcommand] --help`.
 - Ensure `BASETEN_MCP_KEY` is provided when installing Baseten MCP (user can create key at
   `app.baseten.co/settings/api_keys`). Caveat: an MCP instance binds to one org/workspace at install time; switching the
   bound workspace later is not supported. To work with multiple workspaces, install additional MCP instances under
   different names with different keys (see last bullet of this section).
-- Truss CLI only needed for making deployments (check `truss --version`); prior login (multi-workspace users must
-  provide `--remote <name>`). Explore with `truss [subcommand] --help`.
 - Docs MCP missing → grep / fetch `llms.txt`.
 - Backend MCP is API-key-only (currently); OAuth-only harnesses can still use the other components.
 - If backend MCP server is needed for different orgs/workspaces, add multiple MCP instances with different names/keys or
@@ -57,8 +62,8 @@ performance-tuned for one architecture and are the fastest path when they fit; *
 inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code in the
 request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management, structured
 error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and Chains share
-live-patch iteration (`truss watch`); all flavors support per-replica autoscaling, scale-to-zero, and environments /
-promotions.
+live-patch iteration (`baseten model push --watch`); all flavors support per-replica autoscaling, scale-to-zero, and
+environments / promotions.
 
 | You want… | Flavor | Specialization | When NOT to pick |
 | --- | --- | --- | --- |
@@ -93,8 +98,10 @@ Real-world nuances the table can't capture:
 **Skill References** (`ls references/` in skill dir, complementary to hosted docs). Be generous to read any of the
 included reference files as soon as the user touches on that topic.
 
-- `references/baseten-cli.md`: workspace operations, model push, hosted inference, and machine-readable output.
-- `references/truss-cli.md`: `truss push` / `watch` / iterate. Most-used. Deep dive: `references/truss-config.md`.
+- `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
+  inference, and machine-readable output. Most-used.
+- `references/truss-cli.md`: Chains / Training / Loops authoring and Truss config tooling. Deep dive:
+  `references/truss-config.md`.
 - `references/truss-model-py.md`: Python-class flavor (custom pre/post, non-engine architectures).
 - `references/truss-custom-servers.md`: `docker_server` flavor (vLLM / TGI / SGLang / Triton; most common modern-LLM
   path).
@@ -103,8 +110,8 @@ included reference files as soon as the user touches on that topic.
 - `references/model-apis.md`: shared pre-hosted endpoints (DeepSeek, GLM, Kimi, ...). Fastest when one fits.
 - `references/inference-api.md`: calling **custom** deployments. connection reuse (`requests` / `httpx` / OpenAI SDK),
   async / streaming / wake / OpenAI-compat sync routes.
-- `references/management-api.md`: programmatic control plane (models, deployments, envs, secrets). What `truss` CLI uses
-  under the hood.
+- `references/management-api.md`: programmatic control plane (models, deployments, envs, secrets). What the `baseten`
+  and `truss` CLIs use under the hood.
 - `references/deployment-lifecycle.md`: Model / Deployment / Environment semantics + promotion + autoscaling.
 - `references/model-dev-loop.md`: post-first-deploy iteration. rebuild / patch / hot-reload cost tiers, agent-vs-human
   watch loop.

@@ -8,12 +8,12 @@
       "group": "author",
       "complexity": 2,
       "prompt": "Deploy mistralai/Mistral-7B-Instruct-v0.3 on Baseten. I want OpenAI-compatible chat completions on a GPU. Give me what to push.",
-      "expected_output": "[Verification: artifact-only — not actually pushed.] A Truss directory with a config.yaml that uses a custom Docker server (vLLM image) OR build.model_server: VLLM, a GPU resource appropriate for a 7B model (L4/A10G/A100 or larger), and no hand-written model.py. Deploy recipe via `truss push`.",
+      "expected_output": "[Verification: artifact-only — not actually pushed.] A Truss directory with a config.yaml that uses a custom Docker server (vLLM image) OR build.model_server: VLLM, a GPU resource appropriate for a 7B model (L4/A10G/A100 or larger), and no hand-written model.py. Deploy recipe via `baseten model push` (or `truss push`).",
       "files": [],
       "assertions": [
         {"text": "Solution selects vLLM (docker_server with a vllm/vllm-openai image, build.model_server: VLLM, or equivalent) AND does NOT write a model.py", "weight": "core"},
         {"text": "config.yaml requests a GPU appropriate for a 7B model (L4 / A10G / A100 or larger) and references mistralai/Mistral-7B-Instruct-v0.3", "weight": "core"},
-        {"text": "Deploy recipe is some form of `truss push`", "weight": "core"},
+        {"text": "Deploy recipe uses `baseten model push` (a `truss push` equivalent is acceptable)", "weight": "core"},
         {"text": "If docker_server is used, the required wiring (server_port + predict/readiness/liveness endpoints) is present", "weight": "nice"}
       ]
     },
@@ -29,7 +29,7 @@
         {"text": "Solution produces a working Truss for acme/qwen3-8b-ft on a GPU appropriate for an 8B model (L4 / A10G / A100 or larger)", "weight": "core"},
         {"text": "The existing HF_ACCESS_TOKEN workspace secret is referenced with its exact name and wired into the selected runtime or weight-source authentication, with no token value in any artifact.", "weight": "core"},
         {"text": "Exactly one of: a model.py with load/predict, a docker_server block, or an engine block (not a mix)", "weight": "core"},
-        {"text": "Deploy recipe is some form of `truss push`, and if model.py is used, python_version is pinned in config.yaml", "weight": "nice"}
+        {"text": "Deploy recipe uses `baseten model push` (a `truss push` equivalent is acceptable), and if model.py is used, python_version is pinned in config.yaml", "weight": "nice"}
       ]
     },
     {
@@ -200,7 +200,7 @@
       "expected_output": "[Verification: recommendation-only.] Agent recommends the live-patch / watch loop against a development deployment, gives the concrete command, explains the cost-tier mental model (patch vs full rebuild), and notes what changes still force a full rebuild.",
       "files": [],
       "assertions": [
-        {"text": "Agent recommends truss watch / live-patch (e.g. `truss push --watch` or `truss watch`) with the concrete command", "weight": "core"},
+        {"text": "Agent recommends the live-patch development loop with the concrete command, using `baseten model push --watch` or `baseten model watch` (the truss equivalents are acceptable)", "weight": "core"},
         {"text": "Agent notes the patch loop runs against a development deployment (not production / published) and which changes still force a full rebuild (e.g. python_version, resources, live_reload)", "weight": "nice"}
       ]
     },

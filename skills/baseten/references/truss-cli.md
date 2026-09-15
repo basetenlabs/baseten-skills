@@ -1,7 +1,12 @@
 # `truss` CLI
 
-The `truss` CLI builds, deploys, and live-patches Trusses. The published reference is at
-<https://docs.baseten.co/reference/cli/truss/overview>.
+**Deploy and iterate on models with `baseten model push` / `baseten model watch` — see `baseten-cli.md`.** The truss CLI
+still owns Chains, Training, and Loops authoring (`truss chains` / `truss train` / `truss loops`), which the Baseten CLI
+does not cover natively. This file keeps the `truss push` / `truss watch` flag reference for Chains work and for
+existing truss scripts. The flags otherwise mirror the Baseten CLI's with different names — for example
+`--watch-no-sleep` vs `--watch-no-keepalive`, and an `--include-git-info` flag the Baseten CLI has no equivalent for.
+
+The published reference is at <https://docs.baseten.co/reference/cli/truss/overview>.
 
 This file covers Truss model commands only. For the `truss chains` subcommand group, see `truss-chains.md`. The
 `truss train` group (Truss Train) is not covered here; see <https://docs.baseten.co/reference/cli/training>.

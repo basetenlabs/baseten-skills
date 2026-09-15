@@ -22,15 +22,16 @@ Every deployment has a REST endpoint automatically. Environment-attached deploym
 
 A **development deployment** is a mutable slot meant for iteration:
 
-- Created with `truss push --watch` (or `truss chains push --watch`).
+- Created with `baseten model push --watch`. Chains use `truss chains push --watch` (see `truss-chains.md`).
 - Single replica, scales to zero when idle.
-- Live reload via `truss watch` patches code in place.
+- Live reload via `baseten model watch` patches code in place.
 - No autoscaling; no zero-downtime updates.
 - Can be promoted later.
 
 A **published deployment** is immutable:
 
-- Created with plain `truss push` (or with `--promote` / `--environment`).
+- Created with plain `baseten model push`, or with `--environment <name>` to publish into a named environment. Add
+  `--create-environment-if-missing` when that environment does not exist yet.
 - Has autoscaling.
 - Can be promoted to environments and rolled out safely.
 - Is the right target for any non-exploratory work.
@@ -67,9 +68,13 @@ actually re-runs when the deployment moves into a new environment. Otherwise the
 
 Promoting a deployment attaches it to an environment. Three ways to do it:
 
-- `truss push --promote` - publish and promote straight to production in one step.
-- `truss push --environment <name>` - publish and promote into a named environment.
+- `baseten model deployment promote --model-id <model_id> --deployment-id <deployment_id>` - promote an existing
+  deployment after publishing it with `baseten model push`.
+- `baseten model push --environment <name>` - publish straight into a named environment.
 - Dashboard or management API - promote an existing deployment after the fact.
+
+The Truss CLI combines both steps in one command (`truss push --promote`). The Baseten CLI has no `--promote` flag on
+push.
 
 Semantics:
 
@@ -105,7 +110,7 @@ Each environment's autoscaling controls independently:
 - `autoscaling_window` (smoothing period).
 - `scale_down_delay` (how long to wait before reducing replicas).
 
-Set per environment from the dashboard or the management API
+Set per environment with `baseten model environment update-autoscaling`, from the dashboard, or via the management API
 (<https://docs.baseten.co/reference/management-api/deployments/autoscaling/updates-a-deployments-autoscaling-settings>).
 
 Full concept docs: <https://docs.baseten.co/deployment/autoscaling/overview>.
@@ -138,8 +143,8 @@ rejected on regional endpoints. Contact the Baseten account team to enable. Full
 
 ## Managing deployments
 
-- **Naming**: custom deployment names via `truss push --deployment-name <name>` or the dashboard. Names are cosmetic;
-  APIs still address by ID.
+- **Naming**: custom deployment names via `baseten model push --deployment-name <name>` or the dashboard. Names are
+  cosmetic; APIs still address by ID.
 - **Deactivating**: suspends serving while preserving config. No compute cost; inference returns 404. Reactivate
   anytime.
 - **Deleting**: permanent. Production deployments must be replaced before deletion.
@@ -148,17 +153,19 @@ Programmatic equivalents live in `management-api.md`.
 
 ## CI/CD
 
-The normal CI/CD shape is `truss push` with some mix of `--wait`, `--tail`, `--output json`, `--environment`,
-`--include-git-info`, and `--labels`. See `truss-cli.md` for specifics. <https://docs.baseten.co/deployment/ci-cd> has
-worked examples.
+The normal CI/CD shape is `baseten model push` with some mix of `--wait`, `--tail`, `--output json`, `--environment`,
+and `--labels`. `--wait` exits non-zero on a terminal failure, so the CI step fails with the deploy. See
+`baseten-cli.md` for specifics. <https://docs.baseten.co/deployment/ci-cd> has worked examples.
+
+The Truss CLI adds `--include-git-info` (attach git sha, branch, and tag); the Baseten CLI has no equivalent flag.
 
 ## Logs and observability
 
 Per-deployment logs are available in the dashboard under each deployment. The CLI can also tail them:
 
-- `truss push --tail` during a push.
-- `truss watch` during development.
-- `truss model-logs <model-id>` for a one-shot fetch.
+- `baseten model push --tail` during a push.
+- `baseten model watch` during development.
+- `baseten model deployment logs --model-id <model-id>` for a one-shot fetch.
 
 Per-request log correlation uses the `X-Baseten-Request-Id` header returned on every response. Standard Python Trusses
 log this automatically; custom servers must format JSON logs with a top-level `request_id` field (see
@@ -171,8 +178,9 @@ Broader observability (metrics export, alerting, tracing): <https://docs.baseten
 - **Rolling deployments suspend autoscaling** for the environment for their whole duration. If replicas look wrong
   during a rollout, this is why.
 - **`production` is reserved** and cannot be deleted without deleting the model.
-- **Development deployments scale to zero** (unless kept warm, for example by the default `truss watch` behavior).
-  Published deployments do not scale to zero unless autoscaling is configured that way.
+- **Development deployments scale to zero** unless kept warm, which is the default for `baseten model push --watch` and
+  `baseten model watch` (disable with `--watch-no-keepalive` / `--no-keepalive`). Published deployments do not scale to
+  zero unless autoscaling is configured that way.
 - **Promotion may or may not create a new deployment.** If you need `load()` to re-run on promotion, enable "Re-deploy
   when promoting" on the environment.
 - **Chains cannot use rolling deployments.** Promotions for Chains are immediate traffic swaps.
