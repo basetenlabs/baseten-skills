@@ -9,7 +9,7 @@ Each step in a Chain is a **Chainlet**: a Python class that deploys independentl
 autoscaling policy. One Chainlet is marked as the **entrypoint** and handles the Chain's public HTTP surface.
 
 **Prerequisites:** `truss-config.md` (each Chainlet's `RemoteConfig` mirrors `config.yaml`); `deployment-lifecycle.md`
-(dev vs published, per-chainlet autoscaling, environments). For iteration: `truss-cli.md` + `model-dev-loop.md`.
+(dev vs published, per-chainlet autoscaling, environments). For iteration: `truss-cli.md` (Chains watch).
 
 Reference docs live at <https://docs.baseten.co/development/chain/overview> and the CLI reference at
 <https://docs.baseten.co/reference/cli/chains/chains-cli>. For deeper patterns (streaming, binary I/O, error handling,

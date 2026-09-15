@@ -2,8 +2,12 @@
 
 Use `baseten` to deploy and operate models: model push (including the live-patch development loop), deployment promotion
 and lifecycle, environments, autoscaling schedules, replicas, Model APIs, training jobs, and Loops runs. It is the
-default for any deploy or operate task — reach for `truss` only to author Chains, Training jobs, and Loops, which the
-CLI does not cover natively (see `truss-cli.md`).
+default for everything at Baseten except Chains — reach for `truss` only to author a Chain, and even then you can run it
+as `baseten truss chains …` (see `truss-cli.md`).
+
+It is built for agents. Every Baseten-native command takes `--output json` (or `jsonl`, or `none`), `--jq` implies JSON
+output, and `--help-output` prints the command's JSON schema and exit codes. Anything without a first-class command is
+reachable through `baseten api management <path>`.
 
 ## Setup
 
@@ -16,8 +20,22 @@ brew install baseten
 
 For other platforms, use the release archives linked from <https://docs.baseten.co/reference/cli/baseten/overview>.
 
-Authenticate interactively with `baseten auth login --web`. In CI, use `BASETEN_API_KEY` from the environment. Use
-`--profile` to select a saved profile when needed; verify the target before changing workspace state.
+## Auth
+
+`baseten auth` manages credentials, stored as named profiles.
+
+```sh
+baseten auth login                 # interactive browser login (OAuth device flow)
+baseten auth login --web           # same browser flow without interactive prompts
+baseten auth login --with-api-key  # read an API key from stdin
+baseten auth status                # print the current user and workspace
+baseten auth switch                # change the active profile
+baseten auth logout
+```
+
+In CI, pass `BASETEN_API_KEY` in the environment instead of logging in. Use `--profile <name>` on any command to target
+a workspace without switching the default profile, and verify the target before changing workspace state. A profile
+binds to one workspace; `login --remote-url` points it at a non-default Baseten remote.
 
 ## Push a model
 
@@ -90,14 +108,45 @@ with a shared timezone; outside those windows the environment's default settings
 
 ```sh
 baseten --help
-baseten model push --help-output
+baseten model push --help-output                                       # JSON schema + exit codes
 baseten model list --output json
-baseten model list --jq '.models[].id'
+baseten model list --jq '.models[].id'                                 # --jq implies JSON output
+baseten model deployment logs --model-id <id> --deployment-id <id> --tail --output jsonl --jq '.message'
 ```
 
 `--help-output` documents the command's output shape and exit codes. `--jq` implies JSON output. Native commands also
 support `--output jsonl` for streaming records and `--output none` to suppress stdout. These flags apply to
 Baseten-native commands; inspect delegated Truss command help separately.
+
+`baseten api` reaches the Management and inference APIs directly, for anything without a first-class command. Paths are
+relative to `/v1/`:
+
+```sh
+baseten api management models                          # GET /v1/models
+baseten api management models --field name=my-model    # POST a field
+baseten api management models --jq '.models[].id'
+baseten api inference --model-id <id> --data '{"x":1}'
+```
+
+The method defaults to GET, or POST when `--field`, `--raw-field`, or `--input` is given. The Management API OpenAPI
+spec is at <https://api.baseten.co/v1/spec>.
+
+## Org and workspace
+
+```sh
+baseten org describe                                          # organization details
+baseten org regions                                           # region slugs for --region
+baseten org api-key list
+baseten org api-key create --type workspace-invoke --name ci
+baseten org secret set --name hf_access_token                 # value comes from stdin or a prompt
+baseten org billing usage --since 7d
+baseten org team list                                         # also: org user list
+baseten org audit-logs --since 7d --event-type-group deployed
+```
+
+`org secret` stores the secrets `config.yaml` references, so it is usually the step before a first deploy. Avoid
+`org secret set --value`, which leaks into shell history; pass the value on stdin instead. `org audit-logs` records
+deploys, promotions, and API-key, secret, and autoscaling changes.
 
 ## Hosted inference
 
