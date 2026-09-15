@@ -12,7 +12,7 @@ The [September 9 report](results/2026-09-09.md) contains 63 initial executions: 
 | June skill | 85.7% |
 | Initial September skill | 81.7% |
 
-The comparison **does not establish a quality improvement**. An obsolete async rubric and shared live-fixture history limit interpretation. After correcting client guidance and assertions, tasks 50 and 51 passed in all three configurations: six fresh executions. Those follow-ups cover the final skill guidance on two tasks, not the full suite. A full run of the final revision remains outstanding.
+The comparison **does not establish a quality improvement**. An obsolete async rubric and shared live-fixture history limit interpretation. After correcting client guidance and assertions, tasks 50 and 51 passed in all three configurations: six fresh executions. Those follow-ups cover the final skill guidance on two tasks, not the full suite. A full run of the final revision remains outstanding, and it is blocked: five live fixtures (`model-with-dev-deployment`, `model-low-replicas`, `broken-deployment`, `two-deployments-regression`, `deployment-no-model-cache`) currently return 404, so the six tasks that depend on them are skipped until the fixtures are reprovisioned.
 
 The report preserves both iterations separately. Do not merge their scores because their assertions differ. One repetition per task also cannot establish repeatability.
 
