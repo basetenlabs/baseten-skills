@@ -225,7 +225,7 @@
       "group": "integrate",
       "complexity": 1,
       "prompt": "I need to run a roughly 20-minute generation against my deployed Baseten model (id abc12345, production). The client can disconnect and reconnect later. Show me code.",
-      "expected_output": "[Verification: artifact-only — code not executed.] Uses the async_predict pattern at https://model-abc12345.api.baseten.co/environments/production/async_predict with Api-Key auth prefix. Either valid delivery channel: webhook (payload includes webhook_endpoint, receiver persists output) OR polling /async_request/{request_id}. Does not attempt to combine async with streaming.",
+      "expected_output": "[Verification: artifact-only — code not executed.] Uses the async_predict pattern at https://model-abc12345.api.baseten.co/environments/production/async_predict with `Bearer` or legacy `Api-Key` authentication. Delivers results through a webhook (payload includes webhook_endpoint; the receiver persists output), or explains model-side persistence when omitting the webhook, and notes that /async_request/{request_id} returns lifecycle status only. Does not attempt to combine async with streaming.",
       "files": [],
       "assertions": [
         {"text": "Recommends async_predict (URL contains /async_predict) with valid `Bearer` or legacy `Api-Key` authentication. Delivers results through a webhook, or explains model-side persistence when omitting the webhook.", "weight": "core"},

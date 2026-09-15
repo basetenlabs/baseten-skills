@@ -78,13 +78,14 @@ npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 - Some agents prompt before reading skill reference files (they live outside your workspace). In Claude Code,
   allow these reads in `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
 
-To create deployments, install the separate [Truss CLI](https://docs.baseten.co/reference/cli/truss/overview):
+To create deployments, install the [Baseten CLI](https://docs.baseten.co/reference/cli/baseten/overview). `baseten model push` is the default path for creating and updating deployments:
 
 ```bash
-uv tool install truss
+brew tap basetenlabs/baseten
+brew install baseten
 ```
 
-You can install the skill, either MCP server, and the Truss CLI separately.
+Install the [Truss CLI](https://docs.baseten.co/reference/cli/truss/overview) as well only when you author Chains, or when you want the truss commands directly. You can install the skill, either MCP server, and the CLIs separately.
 
 ## Use the toolkit
 

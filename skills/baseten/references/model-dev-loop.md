@@ -14,8 +14,8 @@ Docs: <https://docs.baseten.co/development/model/deploy-and-iterate> (general),
 
 | Tier | What runs | Wall time | Triggered by |
 | --- | --- | --- | --- |
-| **Image rebuild** | Docker build + push + deploy + `load()` | minutes (3-10) | a small set of unpatchable config keys: `python_version`, `resources` (compute/instance type), `live_reload`. The watcher detects and refuses these — see "When to drop the watcher" below. |
-| **Live patch + reload** | File sync, server restart, `load()` re-runs | seconds (10-60) | everything else: `model.py` / Chainlet code, `requirements`, `system_packages`, env vars, `external_data`, `model_metadata`, `build_commands`, data dir, bundled packages |
+| **Image rebuild** | Docker build + push + deploy + `load()` | minutes (3-10) | a small set of unpatchable config keys: `python_version`, `resources` (compute/instance type), `live_reload`; removing `config.yaml`; and any change under the `data/` directory. The watcher detects and refuses these — see "When to drop the watcher" below. |
+| **Live patch + reload** | File sync, server restart, `load()` re-runs | seconds (10-60) | everything else: `model.py` / Chainlet code, `requirements`, `system_packages`, env vars, `external_data`, `model_metadata`, `build_commands`, bundled packages |
 | **Hot-reload** (models only) | In-process class swap; `__init__` / `load` do **not** re-run | sub-second to ~2s | `predict()`-only changes, dev deployment started with `--watch-hot-reload` |
 
 Chains have tiers 1 and 2 only; no hot-reload.

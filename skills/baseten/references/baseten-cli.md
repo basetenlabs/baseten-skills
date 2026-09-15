@@ -85,7 +85,8 @@ baseten model watch --hot-reload
   `--no-keepalive` on watch, to let the dev deployment scale to zero.
 - Hot reload re-imports the module and swaps the class in place. It does **not** re-run `__init__()` or `load()`; if new
   instance state lives there, do a full reload instead.
-- Changes to `resources`, `python_version`, `system_packages`, or `live_reload` require a full `baseten model push`.
+- Changes to `resources`, `python_version`, or `live_reload` require a full `baseten model push`. Everything else,
+  including `system_packages` and `requirements`, rides as a patch. See [the cost tiers](model-dev-loop.md).
 
 Note the flag names differ from truss: the truss equivalents are `--watch-no-sleep` (push) and `--no-sleep` (watch).
 
@@ -95,7 +96,7 @@ Note the flag names differ from truss: the truss equivalents are `--watch-no-sle
 baseten model deployment list --model-id <model_id>
 baseten model deployment logs --model-id <model_id> --deployment-id <id> --tail
 baseten model deployment promote --model-id <model_id> --deployment-id <id>
-baseten model deployment update-autoscaling --model-id <model_id> --environment production
+baseten model deployment update-autoscaling --model-id <model_id> --deployment-id <id>
 baseten model environment autoscaling-schedule --help
 baseten model deployment replica terminate --model-id <model_id> --deployment-id <id>
 baseten model predict --model-id <model_id> --data '{"x":1}'

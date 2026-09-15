@@ -25,6 +25,8 @@ import hashlib
 import itertools
 import json
 import os
+import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -47,6 +49,8 @@ AGGREGATE_SCRIPT = SKILL_CREATOR / "scripts/aggregate_benchmark.py"
 EXECUTOR_TIMEOUT_S = 900
 GRADER_TIMEOUT_S = 600
 PRE_HOOK_TIMEOUT_S = 360
+# Grace period for draining pipes after the executor's process group is killed.
+KILL_DRAIN_TIMEOUT_S = 30
 
 # Skills bundled into the claude binary that leak through every isolation. Set
 # at runner startup via probe_builtin_skills() so an upgraded binary doesn't
@@ -94,13 +98,28 @@ _ENV_ALLOWLIST = frozenset({
 })
 
 
-def _subproc_env(work_root: Path) -> dict[str, str]:
-    fake_home = work_root / "_home"
-    fake_home.mkdir(parents=True, exist_ok=True)
-    fake_home.chmod(0o700)
+def scratch_home() -> Path:
+    """Create the credential-bearing HOME for one subprocess.
+
+    The CLIs persist the workspace key on disk — `~/.trussrc`, plus anything
+    under `~/.config/baseten`. A HOME under `work_root` would leave that key
+    inside the retained artifact tree for every execution, so scratch homes are
+    created in the system temp dir and removed by the caller once the
+    subprocess exits.
+    """
+    home = Path(tempfile.mkdtemp(prefix="baseten-skills-evals-home-"))
+    home.chmod(0o700)
+    return home
+
+
+def remove_scratch_home(home: Path) -> None:
+    shutil.rmtree(home, ignore_errors=True)
+
+
+def _subproc_env(home: Path) -> dict[str, str]:
     # Scoped trussrc — single remote pointing at the test workspace. Agent's
     # `truss push` reads this; no env-var fallback, no other workspaces.
-    trussrc = fake_home / ".trussrc"
+    trussrc = home / ".trussrc"
     if not trussrc.exists():
         trussrc.write_text(
             "[baseten]\n"
@@ -110,7 +129,7 @@ def _subproc_env(work_root: Path) -> dict[str, str]:
         )
     trussrc.chmod(0o600)
     env = {k: v for k, v in os.environ.items() if k in _ENV_ALLOWLIST}
-    env["HOME"] = str(fake_home)
+    env["HOME"] = str(home)
     env["PATH"] = f"{EVALS_VENV_BIN}:{env.get('PATH', '/usr/bin')}"
     # Test-workspace API key, exposed under both common names so the agent
     # finds it regardless of which it looks for. NOT the personal key from
@@ -218,16 +237,19 @@ def probe_builtin_skills(bench_dir: Path, model: str | None = None) -> frozenset
     """One-shot probe: launch claude in max-isolation to capture binary-bundled skills."""
     probe = bench_dir / "_probe"
     probe.mkdir(exist_ok=True)
-    (probe / "_home").mkdir(exist_ok=True)
-    (probe / "mcp.json").write_text(json.dumps({"mcpServers": {}}))
-    env = _subproc_env(probe / "run")  # creates probe/run/_home for HOME
     (probe / "run").mkdir(exist_ok=True)
-    res = subprocess.run(
-        ["claude", "-p", "hi", "--output-format", "stream-json", "--verbose",
-         "--strict-mcp-config", "--mcp-config", str(probe / "mcp.json"),
-         "--setting-sources", ""] + (["--model", model] if model else []),
-        cwd=str(probe / "run"), env=env, capture_output=True, text=True, timeout=60,
-    )
+    (probe / "mcp.json").write_text(json.dumps({"mcpServers": {}}))
+    home = scratch_home()
+    env = _subproc_env(home)
+    try:
+        res = subprocess.run(
+            ["claude", "-p", "hi", "--output-format", "stream-json", "--verbose",
+             "--strict-mcp-config", "--mcp-config", str(probe / "mcp.json"),
+             "--setting-sources", ""] + (["--model", model] if model else []),
+            cwd=str(probe / "run"), env=env, capture_output=True, text=True, timeout=60,
+        )
+    finally:
+        remove_scratch_home(home)
     (probe / "stdout.jsonl").write_text(sanitize(res.stdout))
     (probe / "stderr.txt").write_text(sanitize(res.stderr))
     events = [json.loads(line) for line in res.stdout.splitlines() if line.strip()]
@@ -294,7 +316,8 @@ def run_executor(*, eval_item: dict, work_root: Path, mode: Mode, skill_dir: Pat
     if preamble:
         cmd += ["--append-system-prompt", preamble]
 
-    env = _subproc_env(work_root)
+    home = scratch_home()
+    env = _subproc_env(home)
 
     t0 = time.time()
     tool_calls: Counter[str] = Counter()
@@ -304,19 +327,29 @@ def run_executor(*, eval_item: dict, work_root: Path, mode: Mode, skill_dir: Pat
     transcript_chunks: list[str] = []
     isolation = {"passed": False, "error": "no init event observed"}
     result = None
-    # communicate drains stdout and stderr concurrently, avoiding a full stderr
-    # pipe deadlock, while retaining the wall-clock deadline.
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            cwd=str(work_root), env=env)
     timed_out = False
+    stdout = stderr = b""
+    # Process creation sits inside the try so a failed spawn still unlinks the
+    # API key from mcp.json and removes the scratch HOME. communicate drains
+    # stdout and stderr concurrently, avoiding a full stderr pipe deadlock, while
+    # retaining the wall-clock deadline. The child gets its own process group so
+    # a timed-out run cannot leave grandchildren holding the pipes past the kill.
     try:
-        stdout, stderr = proc.communicate(timeout=EXECUTOR_TIMEOUT_S)
-    except subprocess.TimeoutExpired:
-        timed_out = True
-        proc.kill()
-        stdout, stderr = proc.communicate()
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                cwd=str(work_root), env=env, start_new_session=True)
+        try:
+            stdout, stderr = proc.communicate(timeout=EXECUTOR_TIMEOUT_S)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            with contextlib.suppress(ProcessLookupError, PermissionError):
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            try:
+                stdout, stderr = proc.communicate(timeout=KILL_DRAIN_TIMEOUT_S)
+            except subprocess.TimeoutExpired:
+                proc.kill()
     finally:
         mcp_path.unlink(missing_ok=True)
+        remove_scratch_home(home)
     raw = sanitize(stdout.decode("utf-8", errors="replace"))
     (work_root / "events.jsonl").write_text(raw)
     (work_root / "stderr.txt").write_text(sanitize(stderr.decode("utf-8", errors="replace")))
@@ -416,7 +449,8 @@ def run_grader(*, eval_item: dict, work_root: Path, model: str | None) -> None:
            "--strict-mcp-config", "--setting-sources", ""]
     if model:
         cmd += ["--model", model]
-    env = _subproc_env(work_root)
+    home = scratch_home()
+    env = _subproc_env(home)
     try:
         res = subprocess.run(cmd, cwd=str(work_root), env=env, timeout=GRADER_TIMEOUT_S,
                              capture_output=True, text=True, check=False)
@@ -425,6 +459,8 @@ def run_grader(*, eval_item: dict, work_root: Path, model: str | None) -> None:
             text = output.decode("utf-8", errors="replace") if isinstance(output, bytes) else (output or "")
             (work_root / filename).write_text(sanitize(text))
         raise RuntimeError("grader timed out; partial output saved") from exc
+    finally:
+        remove_scratch_home(home)
     (work_root / "grader_stdout.json").write_text(sanitize(res.stdout))
     (work_root / "grader_stderr.txt").write_text(sanitize(res.stderr))
     try:
@@ -614,7 +650,7 @@ def main() -> int:
                     help="Persistent raw artifact directory outside the repository")
     ap.add_argument("--out", default="runs", help="Symlink dir for artifacts (default: runs/, gitignored)")
     ap.add_argument("--num-workers", type=int, default=1, help="Max parallel (eval × mode × run) workers (default 1 — higher values trigger throttling on the single-workspace test account)")
-    ap.add_argument("--stats-path", default=None, help="Override stats.jsonl path (default: results/stats.jsonl)")
+    ap.add_argument("--stats-path", default=None, help="Override stats.jsonl path (default: <bench_dir>/stats.jsonl under the artifact root, which leaves the committed results/ statistics untouched)")
     ap.add_argument("--resume", default=None, help="Resume an interrupted sweep — point at its /tmp bench_dir; successfully completed units are skipped.")
     args = ap.parse_args()
 

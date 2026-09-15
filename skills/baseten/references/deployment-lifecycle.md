@@ -110,8 +110,12 @@ Each environment's autoscaling controls independently:
 - `autoscaling_window` (smoothing period).
 - `scale_down_delay` (how long to wait before reducing replicas).
 
-Set per environment with `baseten model environment update-autoscaling`, from the dashboard, or via the management API
+Set per environment with `baseten model environment update-autoscaling --model-id <model_id> --environment <name>`, from
+the dashboard, or via the management API
 (<https://docs.baseten.co/reference/management-api/deployments/autoscaling/updates-a-deployments-autoscaling-settings>).
+To adjust one deployment instead of the whole environment, use the sibling command
+`baseten model deployment update-autoscaling --model-id <model_id> --deployment-id <id>`; only the environment command
+takes `--environment`.
 
 Full concept docs: <https://docs.baseten.co/deployment/autoscaling/overview>.
 
