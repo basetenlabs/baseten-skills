@@ -57,7 +57,7 @@ resources:
   memory: 8Gi
 ```
 
-Deploy with `truss push`; calls to `/predict` are forwarded to Ollama's `/api/generate`.
+Deploy with `baseten model push`; calls to `/predict` are forwarded to Ollama's `/api/generate`.
 
 For ready-made server walkthroughs, see:
 
@@ -116,7 +116,7 @@ Constraints:
 
 - Custom server only. `model.py`-based Trusses cannot use `no_build`.
 - Not enabled by default for an organization; the user must contact Baseten support to turn it on.
-- Development mode is not supported; deploy with plain `truss push`.
+- Development deployments are not supported; deploy with plain `baseten model push`.
 - Truss config fields beyond `docker_server`, `base_image`, `environment_variables`, `secrets`, and `data` are not
   injected. Pass other configuration as environment variables.
 - `start_command` is optional; if omitted, the image's original `ENTRYPOINT` runs.
@@ -152,6 +152,6 @@ per-request log filtering does not work. FastAPI and Flask snippets are at
 
 - Custom Docker images: <https://docs.baseten.co/development/model/custom-server>
 - Config reference (`docker_server`, `base_image`, `no_build`): <https://docs.baseten.co/reference/truss-configuration>
-- Private registries: <https://docs.baseten.co/development/model/private-registries>
+- Private registries: <https://docs.baseten.co/development/model/dependencies>
 - Calling deployed models (sync/async/streaming): <https://docs.baseten.co/inference/calling-your-model>
 - Examples: <https://github.com/basetenlabs/truss-examples>

@@ -6,3 +6,5 @@ resources:
   use_gpu: false
 runtime:
   predict_concurrency: 1
+model_metadata:
+  divisor: 0

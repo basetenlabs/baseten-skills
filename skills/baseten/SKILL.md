@@ -14,19 +14,20 @@ cross-cloud HA, and seamless developer workflows.
 - **Dedicated Inference** - deploy any model, performance-optimized + horizontally scaled. Authored as auto-wrapped
   Truss server, custom Docker server, or compound/orchestrated deployment via Chains.
 - **Model APIs** - pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
-- **Training** - two paths: **Truss Train** (BYO container, any framework, full hardware control) and **Loops**
-  (Tinker-compatible managed SDK for SFT + async RL; paired trainer + sampling server, live weight transfers, one-click
-  checkpoint deploy). Multi-node, 1T+ params, 10TB+ datasets, H100/H200/B200. Remote access: SSH and VS Code/Cursor
-  tunnels into containers.
+- **Training** - two paths, both driven by `baseten train` / `baseten loops`: **Truss Train** (BYO container, any
+  framework, full hardware control) and **Loops** (Tinker-compatible managed SDK for SFT + async RL; paired trainer +
+  sampling server, live weight transfers, one-click checkpoint deploy). Multi-node, 1T+ params, 10TB+ datasets,
+  H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels into containers.
 - **Frontier Gateway** - operate your own foundation model B2C.
 
 ## Agent DX Toolkit
 
 | Component | Provides | Install |
 | --- | --- | --- |
+| `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training and Loops. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
 | `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains. API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
 | `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
-| `truss` CLI | Needed for model/chain push from local code, watch (= live patch). Needs `truss login` once. | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
+| `truss` CLI | **Chains authoring** (`truss chains`) plus Truss config tooling for existing truss projects. Training and Loops are Baseten CLI commands (`baseten train` / `baseten loops`). | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
 | `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
 | This skill | `SKILL.md` + `references/*.md` loaded on demand. | `npx skills add basetenlabs/baseten-skills -g -y` |
 
@@ -35,12 +36,18 @@ cross-cloud HA, and seamless developer workflows.
 - Any subset works, full install recommended.
 - Suggest additional installs when the current task benefits from or requires them; help user with installation, but
   elicit preferences first.
+- **Use the `baseten` CLI, not the `truss` CLI, for everything except Chains.** `baseten model push` is headless-safe
+  (never prompts off a TTY), `--wait` blocks until the deployment is active and exits non-zero on terminal failure, and
+  every command supports `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or
+  `baseten auth login`; use `--profile` to target a non-default workspace.
+- The `truss` CLI is for **Chains authoring only** (check `truss --version`). Training and Loops are Baseten CLI
+  commands (`baseten train` / `baseten loops`); a couple of them delegate to truss internally, which is not something to
+  script against. Running `baseten truss chains …` skips a separate truss login because it forwards this CLI's
+  credentials (multi-workspace users must provide `--remote <name>`). Explore with `truss [subcommand] --help`.
 - Ensure `BASETEN_MCP_KEY` is provided when installing Baseten MCP (user can create key at
   `app.baseten.co/settings/api_keys`). Caveat: an MCP instance binds to one org/workspace at install time; switching the
   bound workspace later is not supported. To work with multiple workspaces, install additional MCP instances under
   different names with different keys (see last bullet of this section).
-- Truss CLI only needed for making deployments (check `truss --version`); prior login (multi-workspace users must
-  provide `--remote <name>`). Explore with `truss [subcommand] --help`.
 - Docs MCP missing → grep / fetch `llms.txt`.
 - Backend MCP is API-key-only (currently); OAuth-only harnesses can still use the other components.
 - If backend MCP server is needed for different orgs/workspaces, add multiple MCP instances with different names/keys or
@@ -56,8 +63,8 @@ performance-tuned for one architecture and are the fastest path when they fit; *
 inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code in the
 request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management, structured
 error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and Chains share
-live-patch iteration (`truss watch`); all flavors support per-replica autoscaling, scale-to-zero, and environments /
-promotions.
+live-patch iteration (`baseten model push --watch`); all flavors support per-replica autoscaling, scale-to-zero, and
+environments / promotions.
 
 | You want… | Flavor | Specialization | When NOT to pick |
 | --- | --- | --- | --- |
@@ -82,8 +89,8 @@ Real-world nuances the table can't capture:
 
 - **Hybrids exist.** A `model.py` can wrap an engine for pre/post-processing; a Chain entrypoint can be a Python class
   while internal Chainlets use engines.
-- **Chain websockets are entrypoint-only.** Intra-chainlet calls only stream output, but bi-di usually not needed on
-  those edges.
+- **Existing Truss models can join Chains.** Use `TrussChainlet` and `TrussHandle` for HTTP or WebSocket calls; read
+  <https://docs.baseten.co/development/chain/truss-chainlets> before wiring this integration.
 - **Engine performance vs flexibility.** TRT-LLM is the fastest path for many LLMs but its config surface is opaque.
   Worth the trade only when latency/throughput is a real constraint.
 
@@ -92,7 +99,9 @@ Real-world nuances the table can't capture:
 **Skill References** (`ls references/` in skill dir, complementary to hosted docs). Be generous to read any of the
 included reference files as soon as the user touches on that topic.
 
-- `references/truss-cli.md`: `truss push` / `watch` / iterate. Most-used. Deep dive: `references/truss-config.md`.
+- `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
+  inference, and machine-readable output. Most-used.
+- `references/truss-cli.md`: Chains authoring and legacy `truss` commands. Deep dive: `references/truss-config.md`.
 - `references/truss-model-py.md`: Python-class flavor (custom pre/post, non-engine architectures).
 - `references/truss-custom-servers.md`: `docker_server` flavor (vLLM / TGI / SGLang / Triton; most common modern-LLM
   path).
@@ -101,8 +110,8 @@ included reference files as soon as the user touches on that topic.
 - `references/model-apis.md`: shared pre-hosted endpoints (DeepSeek, GLM, Kimi, ...). Fastest when one fits.
 - `references/inference-api.md`: calling **custom** deployments. connection reuse (`requests` / `httpx` / OpenAI SDK),
   async / streaming / wake / OpenAI-compat sync routes.
-- `references/management-api.md`: programmatic control plane (models, deployments, envs, secrets). What `truss` CLI uses
-  under the hood.
+- `references/management-api.md`: programmatic control plane (models, deployments, envs, secrets). What the `baseten`
+  and `truss` CLIs use under the hood.
 - `references/deployment-lifecycle.md`: Model / Deployment / Environment semantics + promotion + autoscaling.
 - `references/model-dev-loop.md`: post-first-deploy iteration. rebuild / patch / hot-reload cost tiers, agent-vs-human
   watch loop.
@@ -144,11 +153,11 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 ### Non-obvious placements within `references/`
 
 - Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`,
-  secrets, resources).
+  secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
-- Training and Frontier Gateway: no skill reference. Use `baseten` MCP + `baseten_docs` MCP. For training path choice
-  see `training/overview.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels into
-  training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
+- Training and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training path
+  choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels
+  into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
 
 ### Tool quirks
 
