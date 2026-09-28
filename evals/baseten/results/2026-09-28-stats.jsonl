@@ -1,0 +1,4 @@
+{"task":65,"condition":"no-reference","model":"claude-sonnet-5","provider":"firstParty","assertions":[false,false,true],"gross_input_tokens":583,"output_tokens":540,"duration_ms":7325}
+{"task":65,"condition":"final-skill","model":"claude-sonnet-5","provider":"firstParty","assertions":[true,true,true],"gross_input_tokens":10154,"output_tokens":146,"duration_ms":2497}
+{"task":66,"condition":"no-reference","model":"claude-sonnet-5","provider":"firstParty","assertions":[false,false,false,false,true],"gross_input_tokens":593,"output_tokens":847,"duration_ms":11435}
+{"task":66,"condition":"final-skill","model":"claude-sonnet-5","provider":"firstParty","assertions":[true,true,true,true,true],"gross_input_tokens":10164,"output_tokens":707,"duration_ms":8429}

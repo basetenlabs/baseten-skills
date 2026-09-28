@@ -4,7 +4,7 @@ Use this guide to compare skill versions and review the latest results. Each dat
 
 ## Latest results
 
-The [September 28 targeted report](results/2026-09-28.md) evaluates managed Loops client execution and checkpoint deployment safety. The updated skill matched the no-skill baseline on the client command and improved the checkpoint-deployment prompt from 60% to 100% in one repetition. This targeted run does not replace the September 9 full-suite screen.
+The [September 28 targeted report](results/2026-09-28.md) evaluates managed Loops client execution and checkpoint deployment safety. The initial comparison was withdrawn because its baseline could read skill files. See the report for the isolated follow-up and its limitations. Neither experiment replaces the September 9 full-suite screen.
 
 The [September 9 report](results/2026-09-09.md) contains 63 initial executions: 21 tasks × three configurations × one repetition, using `zai-org/GLM-5.2-Fast` through Baseten's Anthropic-compatible API. Every configuration enabled both the backend and documentation Model Context Protocol (MCP) servers.
 
@@ -22,7 +22,7 @@ The report preserves both iterations separately. Do not merge their scores becau
 
 | Date | Experiment | Committed statistics |
 | --- | --- | --- |
-| [September 28, 2026](results/2026-09-28.md) | Claude Sonnet 5; two targeted Loops recommendation tasks, one repetition | Metrics in report |
+| [September 28, 2026](results/2026-09-28.md) | Withdrawn comparison and isolated, tool-free Loops follow-up | [Four final executions](results/2026-09-28-stats.jsonl) |
 | [September 9, 2026](results/2026-09-09.md) | GLM-5.2-Fast; 21-task version comparison plus two-task corrected follow-up | [69 executions](results/2026-09-09-stats.jsonl) |
 | [May 26, 2026](results/2026-05-26.md) | Opus 4.7; 16 tasks, five skill/MCP configurations, four repetitions | [320 executions](results/stats.jsonl) |
 | [April 17, 2026](results/2026-04-17.md) | Sonnet pilot; five prompts, with and without skill; includes April 20 rerun | Metrics in report |

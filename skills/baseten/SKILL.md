@@ -38,7 +38,7 @@ cross-cloud HA, and seamless developer workflows.
   elicit preferences first.
 - **Use the `baseten` CLI, not the `truss` CLI, for everything except Chains.** This includes `baseten loops exec`,
   which runs a Loops client as a managed Training Job. `baseten model push` is headless-safe (never prompts off a TTY),
-  `--wait` blocks until the deployment is active and exits non-zero on terminal failure, and every command supports
+  `--wait` blocks until the deployment is active and exits non-zero on terminal failure. Native commands support
   `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or `baseten auth login`; use
   `--profile` to target a non-default workspace.
 - The `truss` CLI is for **Chains authoring only** (check `truss --version`). Training and Loops are Baseten CLI
