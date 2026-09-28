@@ -87,12 +87,14 @@ The client process orchestrates training and needs sustained outbound connectivi
 use managed execution rather than relying on a laptop to remain awake:
 
 ```sh
-baseten loops exec --with-uv -- uv run python train.py
+baseten loops exec --dir . --with-uv -- uv run python train.py
 baseten train job logs --job-id <JOB_ID> --tail
 ```
 
-The first command packages the current directory and submits the client as a Training Job. It returns after submission;
-use the returned job ID with the separate log command. Do not add `--tail` to `loops exec`.
+The first command packages the directory selected by the required `--dir` flag and submits the client as a Training Job.
+Use `.` for the current project or pass another project path. The remote command runs from that directory. Submission
+returns a job ID; use it with the separate log command. Add `--output json` before `--` for a structured result with
+`job_id`. Do not add `--tail` to `loops exec`.
 
 Submission uses the active Baseten CLI profile. The remote job receives `BASETEN_API_KEY` through a team secret, created
 on first use unless you supply a credential. Submission does not copy the active profile into the job. The delegated

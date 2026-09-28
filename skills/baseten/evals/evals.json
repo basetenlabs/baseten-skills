@@ -311,7 +311,7 @@
       "expected_output": "Recommendation-only; uses the first-class Baseten CLI command for managed Loops client execution without starting a job.",
       "files": [],
       "assertions": [
-        {"text": "Uses `baseten loops exec --with-uv -- uv run python train.py` without a submission --tail flag and does not substitute raw `truss loops exec`, `b10 run`, or a nonexistent command.", "weight": "core"},
+        {"text": "Uses `baseten loops exec --dir . --with-uv -- uv run python train.py` without a submission --tail flag and does not substitute raw `truss loops exec`, `b10 run`, or a nonexistent command.", "weight": "core"},
         {"text": "Explains that the command packages the current directory and runs the client as a managed Training Job; distinguishes active-profile submission authentication from the remote job's team-secret credential.", "weight": "core"},
         {"text": "Does not execute the command or create billable resources.", "weight": "core"}
       ]
@@ -346,7 +346,7 @@
           "weight": "core"
         },
         {
-          "text": "Uses baseten loops exec --with-uv -- uv run python train.py and separately follows logs with baseten train job logs --job-id <JOB_ID> --tail.",
+          "text": "Uses baseten loops exec --dir . --with-uv -- uv run python train.py and separately follows logs with baseten train job logs --job-id <JOB_ID> --tail.",
           "weight": "core"
         },
         {
