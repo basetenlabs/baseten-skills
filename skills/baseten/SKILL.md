@@ -36,14 +36,15 @@ cross-cloud HA, and seamless developer workflows.
 - Any subset works, full install recommended.
 - Suggest additional installs when the current task benefits from or requires them; help user with installation, but
   elicit preferences first.
-- **Use the `baseten` CLI, not the `truss` CLI, for everything except Chains.** `baseten model push` is headless-safe
-  (never prompts off a TTY), `--wait` blocks until the deployment is active and exits non-zero on terminal failure, and
-  every command supports `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or
-  `baseten auth login`; use `--profile` to target a non-default workspace.
+- **Use the `baseten` CLI, not the `truss` CLI, for everything except Chains.** This includes `baseten loops exec`,
+  which runs a Loops client as a managed Training Job. `baseten model push` is headless-safe (never prompts off a TTY),
+  `--wait` blocks until the deployment is active and exits non-zero on terminal failure, and every command supports
+  `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or `baseten auth login`; use
+  `--profile` to target a non-default workspace.
 - The `truss` CLI is for **Chains authoring only** (check `truss --version`). Training and Loops are Baseten CLI
-  commands (`baseten train` / `baseten loops`); a couple of them delegate to truss internally, which is not something to
-  script against. Running `baseten truss chains …` skips a separate truss login because it forwards this CLI's
-  credentials (multi-workspace users must provide `--remote <name>`). Explore with `truss [subcommand] --help`.
+  commands (`baseten train` / `baseten loops`), even when the Baseten CLI delegates to Truss internally. Running
+  `baseten truss chains …` skips a separate truss login because it forwards this CLI's credentials (multi-workspace
+  users must provide `--remote <name>`). Explore with `truss [subcommand] --help`.
 - Ensure `BASETEN_MCP_KEY` is provided when installing Baseten MCP (user can create key at
   `app.baseten.co/settings/api_keys`). Caveat: an MCP instance binds to one org/workspace at install time; switching the
   bound workspace later is not supported. To work with multiple workspaces, install additional MCP instances under

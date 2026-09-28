@@ -301,6 +301,36 @@
         {"text": "Explains that trainer creation provisions resources and the paired sampler is created when first requested, rather than claiming both start at ServiceClient construction.", "weight": "core"},
         {"text": "Explains closing the training client and explicit run deactivation, which tears down both trainer and sampler while preserving checkpoints.", "weight": "core"}
       ]
+    },
+    {
+      "id": 65,
+      "name": "train-loops-managed-client",
+      "group": "train",
+      "complexity": 1,
+      "prompt": "My Loops client needs to run unattended because my laptop sleeps. What Baseten command should I use to package this directory and run `uv run python train.py`, while reusing my current Baseten CLI workspace credentials? Do not execute the command.",
+      "expected_output": "Recommendation-only; uses the first-class Baseten CLI command for managed Loops client execution without starting a job.",
+      "files": [],
+      "assertions": [
+        {"text": "Uses `baseten loops exec --with-uv --tail -- uv run python train.py` and does not substitute raw `truss loops exec`, `b10 run`, or a nonexistent command.", "weight": "core"},
+        {"text": "Explains that the command packages the current directory, runs the client as a managed Training Job, and forwards the active Baseten CLI workspace credentials.", "weight": "core"},
+        {"text": "Does not execute the command or create billable resources.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 66,
+      "name": "train-loops-checkpoint-deploy-safety",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "I have a Loops sampler checkpoint and want to deploy it through an agent. Which Baseten API or MCP operation should the agent choose, and what safety checks should it mention around authorization, billing, retries, and trainer checkpoints? Do not deploy anything.",
+      "expected_output": "Recommendation-only; selects the Loops checkpoint deployment operation and states its authorization, billing, checkpoint-target, and retry constraints.",
+      "files": [],
+      "assertions": [
+        {"text": "Names either the `deploy_loops_checkpoint` MCP tool or `POST /v1/loops/checkpoints/deploy`, rather than inventing a generic deployment operation.", "weight": "core"},
+        {"text": "Says to confirm the user's intent before creating billable resources and explains that the service authorizes access to the checkpoint's team.", "weight": "core"},
+        {"text": "States that only sampler-target checkpoints deploy and trainer-target checkpoints contain training state.", "weight": "core"},
+        {"text": "States that deployment is not idempotent and that an uncertain result must be inspected before retrying to avoid duplicate deployments.", "weight": "core"},
+        {"text": "Does not execute a deployment or another billable operation.", "weight": "core"}
+      ]
     }
   ]
 }
