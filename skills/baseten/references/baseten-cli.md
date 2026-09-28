@@ -182,6 +182,17 @@ finished and explicitly deactivate the run with `baseten loops run deactivate --
 wants to end the session. Deactivation shuts down trainer and sampler; saved checkpoints survive. See
 <https://docs.baseten.co/loops/quickstart>.
 
+The same lifecycle is available without the CLI: the Loops Management API at `api.baseten.co/v1/loops` (sessions, runs,
+checkpoints, checkpoint files, `POST /v1/loops/checkpoints/deploy`) and the `baseten` MCP Loops tools (create session
+and run, list runs, list checkpoints and files, deploy, deactivate). Only sampler-target checkpoints deploy;
+trainer-target checkpoints hold training state. Deploys are billable and not idempotent: repeating the same request
+creates another deployment, so confirm before calling and never retry blindly. The management API reference is at
+<https://docs.baseten.co/reference/loops-api>.
+
+The SDK client process orchestrates a run, so it needs sustained outbound connectivity to Baseten. For unattended work,
+host it with `truss loops exec`, which packages the current directory and starts the client as a Training Job. See
+<https://docs.baseten.co/loops/concepts#run-the-client>.
+
 Sources:
 
 - <https://docs.baseten.co/reference/cli/baseten/overview>
