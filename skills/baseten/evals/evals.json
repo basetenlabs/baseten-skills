@@ -331,6 +331,68 @@
         {"text": "States that deployment is not idempotent and that an uncertain result must be inspected before retrying to avoid duplicate deployments.", "weight": "core"},
         {"text": "Does not execute a deployment or another billable operation.", "weight": "core"}
       ]
+    },
+    {
+      "id": 67,
+      "name": "train-loops-managed-client-discovery",
+      "group": "train",
+      "complexity": 1,
+      "prompt": "My laptop sleeps during Loops training. How should I run uv run python train.py unattended using my Baseten workspace? Explain credentials and how to follow logs. Do not run anything.",
+      "expected_output": "Finds the Loops reference from the skill entrypoint and explains managed execution without running it.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Reads the dedicated Loops reference through skill routing when the skill is available; verify the read trace, not just the final answer.",
+          "weight": "core"
+        },
+        {
+          "text": "Uses baseten loops exec --with-uv -- uv run python train.py and separately follows logs with baseten train job logs --job-id <JOB_ID> --tail.",
+          "weight": "core"
+        },
+        {
+          "text": "Distinguishes active-profile submission credentials from the remote job's team-secret API key; does not claim the local profile is copied into the job.",
+          "weight": "core"
+        },
+        {
+          "text": "Qualifies the recommendation on installed CLI availability and does not submit a job.",
+          "weight": "core"
+        }
+      ]
+    },
+    {
+      "id": 68,
+      "name": "train-loops-deploy-rest-discovery",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "I have a saved Loops sampler checkpoint. Which MCP tool should my agent use to deploy it, and what exact HTTP request is the fallback if the MCP tool is unavailable? What should it do if the request times out? Do not deploy anything.",
+      "expected_output": "Finds the Loops reference and gives the exact staged REST fallback with billing, authorization, availability, and retry safeguards.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Reads the dedicated Loops reference through skill routing when the skill is available; verify the read trace.",
+          "weight": "core"
+        },
+        {
+          "text": "Names deploy_loops_checkpoint and POST https://api.baseten.co/v1/loops/checkpoints/deploy with Bearer authentication and checkpoint_ids, model_name, instance_type_id, and hf_secret_name in the JSON body.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains sampler-only checkpoints, same-team checkpoints, team deployment permission, and a team-scoped Hugging Face secret name.",
+          "weight": "core"
+        },
+        {
+          "text": "States deployment creates billable resources and requires user confirmation before execution.",
+          "weight": "core"
+        },
+        {
+          "text": "States non-idempotency, inspects unknown outcomes before retrying, and does not invent an idempotency key.",
+          "weight": "core"
+        },
+        {
+          "text": "Checks deployed REST availability rather than treating an absent MCP tool as proof of a working REST endpoint; does not deploy.",
+          "weight": "core"
+        }
+      ]
     }
   ]
 }

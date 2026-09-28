@@ -176,31 +176,9 @@ command's help. For choosing between managed Loops training and a custom contain
 <https://docs.baseten.co/training/index>. For SDK code, use the current Loops quickstart and supported-models docs
 instead of copying inference-model slugs into a trainer configuration.
 
-For Loops SDK work, install `baseten-loops` and import from `baseten.loops`. Creating a training client provisions GPUs;
-the paired sampler is provisioned when first requested. A running `TrainingClient` keeps the session warm. Close it when
-finished and explicitly deactivate the run with `baseten loops run deactivate --run-id <run_id> --yes` when the user
-wants to end the session. Deactivation shuts down trainer and sampler; saved checkpoints survive. See
-<https://docs.baseten.co/loops/quickstart>.
-
-The same lifecycle is available without the CLI: the Loops Management API at `api.baseten.co/v1/loops` (sessions, runs,
-checkpoints, checkpoint files, `POST /v1/loops/checkpoints/deploy`) and the `baseten` MCP Loops tools (create session
-and run, list runs, list checkpoints and files, deploy, deactivate). Only sampler-target checkpoints deploy;
-trainer-target checkpoints hold training state. Deploys are billable and not idempotent: repeating the same request
-creates another deployment, so confirm before calling and never retry blindly. The management API reference is at
-<https://docs.baseten.co/reference/loops-api/overview>. The service checks every checkpoint against its owning team and
-rejects requests that mix checkpoints from different teams. Authorization means permission to deploy for the
-checkpoint's team, not that the caller has only one team or must own the checkpoint personally. An authorized
-organization admin can act across teams, but every checkpoint in one deployment request must belong to the same team.
-
-The SDK client process orchestrates a run, so it needs sustained outbound connectivity to Baseten. For unattended work,
-host it with `baseten loops exec`, which packages the current directory, starts the client as a Training Job, and uses
-the active Baseten CLI profile for submission. For example, run
-`baseten loops exec --with-uv -- uv run python train.py`. The command returns after submission. Follow logs separately
-with `baseten train job logs --job-id <job_id> --tail`; the delegated Truss process cannot refresh an OAuth token. The
-remote job receives `BASETEN_API_KEY` through a team secret, created on first use unless you supply a credential. When
-explaining credential reuse, distinguish submission authentication from the remote job's credential. Submission does not
-copy the active profile into the job. The CLI checkpoint deployment command is a valid alternative that delegates to
-Truss; it does not call this REST endpoint. See <https://docs.baseten.co/loops/concepts#run-the-client>.
+For Loops SDK lifecycle, MCP tools, REST fallbacks, checkpoint deployment, and managed client execution, read
+[Loops operations](loops.md). Confirm command availability with `baseten loops exec --help` before recommending managed
+execution.
 
 Sources:
 

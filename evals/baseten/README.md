@@ -4,6 +4,12 @@ Use this guide to compare skill versions and review the latest results. Each dat
 
 ## Latest results
 
+The September 28 report also includes a separate catalog-to-reference discovery check for the dedicated Loops
+reference. Two tasks passed in the final sample after correcting an omitted billing warning. This manual check
+does not test installed-plugin activation or live operations; model and usage metrics were unavailable. See the
+[discovery section](results/2026-09-28.md#catalog-to-reference-discovery-follow-up) and
+[separate statistics](results/2026-09-28-discovery-stats.jsonl).
+
 The [September 28 targeted report](results/2026-09-28.md) evaluates managed Loops client execution and checkpoint deployment safety. The initial comparison was withdrawn because its baseline could read skill files. See the report for the isolated follow-up and its limitations. Neither experiment replaces the September 9 full-suite screen.
 
 The [September 9 report](results/2026-09-09.md) contains 63 initial executions: 21 tasks × three configurations × one repetition, using `zai-org/GLM-5.2-Fast` through Baseten's Anthropic-compatible API. Every configuration enabled both the backend and documentation Model Context Protocol (MCP) servers.

@@ -95,6 +95,10 @@ Ask your agent to explain Baseten documentation, create a deployment, or manage 
 
 ## Evaluation results
 
+The [Loops discovery follow-up](evals/baseten/results/2026-09-28.md#catalog-to-reference-discovery-follow-up) checks
+whether an agent finds the dedicated reference from the skill catalog and entrypoint. Both tasks passed in the
+final manual sample. This is not a live integration test or an installed-plugin activation benchmark.
+
 The [September 28 targeted evaluation](evals/baseten/results/2026-09-28.md) covers managed Loops client execution and checkpoint deployment safety. The initial comparison was withdrawn because its baseline could read skill files. See the report for the isolated follow-up and its limitations. Neither experiment replaces the full-suite comparison below.
 
 The [September 9 evaluation](evals/baseten/results/2026-09-09.md) compared the refreshed skill, the June skill, and no skill on the same model with both MCP servers enabled.

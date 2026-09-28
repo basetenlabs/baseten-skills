@@ -2,8 +2,8 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training jobs (SFT/RL/LoRA), or Model
-  Frontier Gateway.
+  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training Jobs or Loops, deploying Loops
+  checkpoints, or Model Frontier Gateway.
 ---
 
 ## Baseten Product Overview
@@ -102,6 +102,8 @@ included reference files as soon as the user touches on that topic.
 
 - `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
   inference, and machine-readable output. Most-used.
+- `references/loops.md`: Loops sessions, runs, checkpoints, MCP tools, REST requests, and unattended client execution.
+  Read this for Loops operations or checkpoint deployment, including permissions and uncertain deployment results.
 - `references/truss-cli.md`: Chains authoring and legacy `truss` commands. Deep dive: `references/truss-config.md`.
 - `references/truss-model-py.md`: Python-class flavor (custom pre/post, non-engine architectures).
 - `references/truss-custom-servers.md`: `docker_server` flavor (vLLM / TGI / SGLang / Triton; most common modern-LLM
@@ -156,9 +158,10 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 - Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`,
   secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
-- Training and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training path
-  choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels
-  into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
+- Loops operations: start with `references/loops.md`, then consult its linked SDK and API documentation.
+- Training Jobs and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training
+  path choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code
+  tunnels into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
 
 ### Tool quirks
 
