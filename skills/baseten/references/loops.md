@@ -24,7 +24,7 @@ REST body verbatim: MCP request objects can be nested under names such as `creat
 
 | MCP tool | REST operation | Inputs |
 | --- | --- | --- |
-| `create_loops_session` | `POST /v1/loops/sessions` | No request body for the organization route. |
+| `create_loops_session` | `POST /v1/loops/sessions` or `POST /v1/teams/{team_id}/loops/sessions` | Optional `team_id` selects the team used for authorization, not the session's project team. Omission checks the default team. |
 | `list_loops_runs` | `GET /v1/loops/runs` | Optional query filters from the API reference. |
 | `get_loops_run` | `GET /v1/loops/runs/{run_id}` | Run ID. |
 | `create_loops_run` | `POST /v1/loops/runs` | JSON with `session_id` and `base_model`; creates the run in the default team. |
@@ -50,9 +50,12 @@ baseten loops checkpoint deploy --checkpoint-id <SAMPLER_CHECKPOINT_ID> --dry-ru
 
 The command prompts for deployment settings and prints the generated Truss config without creating a deployment. Review
 it, then rerun without `--dry-run` after the user confirms deployment. To customize the generated config, save the
-printed YAML as `config.yaml` in a Truss directory, edit it, and deploy with `baseten model push --dir <DIRECTORY>`
-after confirmation. The CLI delegates to Truss; it is not a wrapper for the REST endpoint below. For explicitly
-requested API or MCP automation, use the available operation and its discovered schema instead.
+printed YAML as `config.yaml` in a Truss directory and edit it. After confirmation, deploy with
+`baseten --profile <PROFILE> model push --dir <DIRECTORY> --team <CHECKPOINT_TEAM>`. Keep the preview's profile and the
+checkpoint's team. The generated config doesn't store the team; omitting `--team` selects the organization's default
+team and can cause a checkpoint/team mismatch. The Hugging Face secret must be available in that team. The CLI delegates
+to Truss; it is not a wrapper for the REST endpoint below. For explicitly requested API or MCP automation, use the
+available operation and its discovered schema instead.
 
 ## REST fallback
 

@@ -4,6 +4,10 @@ Use this guide to compare skill versions and review the latest results. Each dat
 
 ## Latest results
 
+The [edited config team follow-up](results/2026-09-28.md#edited-config-team-follow-up) checks task 71.
+The updated reference preserves both the CLI profile and checkpoint team in the push command. It passed four
+assertions in one read-only sample; no deployment was tested.
+
 The [networking and deployment preview follow-up](results/2026-09-28.md#networking-and-deployment-preview-follow-up)
 checks tasks 69 and 70 against the old and updated Loops reference. Each final sample passed its four assertions;
 this targeted manual check does not verify live operations or establish general improvement.

@@ -1,0 +1,2 @@
+{"task_id":71,"variant":"old-reference","revision":"cb587e0","passed":2,"total":4,"model":null,"provider":null,"tokens":null,"duration_seconds":null,"repetitions":1,"grading":"manual","live_operations":false}
+{"task_id":71,"variant":"updated-reference","reference_sha256":"ada043cbe9849d9d504f3a273c880737fafd7bcc7b3830837f3856dfad212093","passed":4,"total":4,"model":null,"provider":null,"tokens":null,"duration_seconds":null,"repetitions":1,"grading":"manual","live_operations":false}

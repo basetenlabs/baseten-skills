@@ -423,6 +423,21 @@
         {"text": "Explains how to save the printed YAML as config.yaml, edit it, and use baseten model push only after confirmation.", "weight": "core"},
         {"text": "Does not deploy and does not invent a REST dry_run field.", "weight": "core"}
       ]
+    },
+    {
+      "id": 71,
+      "name": "train-loops-edited-config-team",
+      "group": "train",
+      "complexity": 1,
+      "prompt": "I previewed a Loops sampler checkpoint using the research team in my staging CLI profile. I saved the printed config.yaml in ./checkpoint-model and edited its GPU settings. What exact command should I run next, and what should I check before running it? Do not deploy anything.",
+      "expected_output": "Preserves the profile and checkpoint team when pushing an edited checkpoint config, with confirmation before deployment.",
+      "files": [],
+      "assertions": [
+        {"text": "Shows baseten model push with --profile staging, --dir ./checkpoint-model, and --team research.", "weight": "core"},
+        {"text": "Explains that the generated config does not preserve team selection and model push otherwise uses the default team.", "weight": "core"},
+        {"text": "Checks checkpoint-team permission and Hugging Face secret availability before deployment.", "weight": "core"},
+        {"text": "Does not deploy and requires confirmation for billable resources.", "weight": "core"}
+      ]
     }
   ]
 }
