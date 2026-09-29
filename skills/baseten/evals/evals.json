@@ -393,6 +393,36 @@
           "weight": "core"
         }
       ]
+    },
+    {
+      "id": 69,
+      "name": "train-loops-sandbox-networking",
+      "group": "train",
+      "complexity": 1,
+      "prompt": "My Loops Python client runs in a third-party sandbox. A basic API request succeeds, but training stops making progress later. Is keeping the machine awake enough? What should I check, and how can I run train.py unattended on Baseten? Do not run anything.",
+      "expected_output": "Explains sustained network requirements and offers managed client execution without attributing an unverified cause to the provider.",
+      "files": [],
+      "assertions": [
+        {"text": "Explains that staying awake and one successful API request do not establish sustained connectivity.", "weight": "core"},
+        {"text": "Checks DNS, outbound HTTPS, network policies, and process suspension from the script's environment without asserting a provider-specific cause.", "weight": "core"},
+        {"text": "Offers baseten loops exec --dir . --with-uv -- uv run python train.py, checks installed availability, and follows logs separately.", "weight": "core"},
+        {"text": "Does not run commands or create resources.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 70,
+      "name": "train-loops-interactive-deploy-preview",
+      "group": "train",
+      "complexity": 1,
+      "prompt": "I want to deploy a saved Loops sampler checkpoint interactively, but inspect and adjust its GPU and serving config before creating a deployment. Which interface and commands should I use? Do not deploy anything.",
+      "expected_output": "Prefers the Baseten CLI dry run and explains preview, customization, and confirmation before deployment.",
+      "files": [],
+      "assertions": [
+        {"text": "Prefers baseten loops checkpoint deploy and checks installed CLI support.", "weight": "core"},
+        {"text": "Shows --checkpoint-id with --dry-run and explains that it prompts and prints config without creating a deployment.", "weight": "core"},
+        {"text": "Explains how to save the printed YAML as config.yaml, edit it, and use baseten model push only after confirmation.", "weight": "core"},
+        {"text": "Does not deploy and does not invent a REST dry_run field.", "weight": "core"}
+      ]
     }
   ]
 }

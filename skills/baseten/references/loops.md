@@ -39,6 +39,21 @@ run. Creating an SDK training client provisions GPUs; the SDK provisions the pai
 running `TrainingClient` keeps the session warm. Close the client when finished, and explicitly deactivate the run when
 the user wants to stop its resources. Saved checkpoints survive run deactivation.
 
+## Interactive checkpoint deployment
+
+Prefer the Baseten CLI for interactive checkpoint deployment. Check `baseten loops checkpoint deploy --help` for
+installed support. Preview the generated GPU and serving config before creating a deployment:
+
+```sh
+baseten loops checkpoint deploy --checkpoint-id <SAMPLER_CHECKPOINT_ID> --dry-run
+```
+
+The command prompts for deployment settings and prints the generated Truss config without creating a deployment. Review
+it, then rerun without `--dry-run` after the user confirms deployment. To customize the generated config, save the
+printed YAML as `config.yaml` in a Truss directory, edit it, and deploy with `baseten model push --dir <DIRECTORY>`
+after confirmation. The CLI delegates to Truss; it is not a wrapper for the REST endpoint below. For explicitly
+requested API or MCP automation, use the available operation and its discovered schema instead.
+
 ## REST fallback
 
 List checkpoints for a known run:
@@ -79,8 +94,6 @@ A timeout or lost response leaves the outcome unknown: inspect the team's models
 cannot establish whether a deployment was created, stop and ask for reconciliation rather than creating another one. Do
 not invent an idempotency key or assume repeating a model name makes retries safe.
 
-`baseten loops checkpoint deploy` is a separate CLI path that delegates to Truss, not a wrapper for this REST endpoint.
-
 ## Unattended SDK clients
 
 The client process orchestrates training and needs sustained outbound connectivity. Once available in the installed CLI,
@@ -100,9 +113,15 @@ Submission uses the active Baseten CLI profile. The remote job receives `BASETEN
 on first use unless you supply a credential. Submission does not copy the active profile into the job. The delegated
 Truss process cannot refresh an OAuth token; the separate native log command can.
 
+A third-party sandbox or hosted notebook can restrict networking even while the process stays running. Check DNS
+resolution and outbound HTTPS access from the environment running the script. Check proxy, VPN, firewall,
+idle-connection, and process-suspension policies. One successful API request does not establish sustained connectivity.
+Do not assume a specific provider blocks Loops without evidence from that environment.
+
 ## Sources and release checks
 
 - [Loops concepts](https://docs.baseten.co/loops/concepts) covers client execution and resource behavior.
+- [Deploy a checkpoint](https://docs.baseten.co/loops/deploy-checkpoints) covers CLI previews and deployment.
 - [Loops API reference](https://docs.baseten.co/reference/loops-api/overview) is the public source for REST contracts.
 - [Loops CLI reference](https://docs.baseten.co/reference/cli/baseten/loops) documents released commands.
 

@@ -4,6 +4,10 @@ Use this guide to compare skill versions and review the latest results. Each dat
 
 ## Latest results
 
+The [networking and deployment preview follow-up](results/2026-09-28.md#networking-and-deployment-preview-follow-up)
+checks tasks 69 and 70 against the old and updated Loops reference. Each final sample passed its four assertions;
+this targeted manual check does not verify live operations or establish general improvement.
+
 The September 28 report also includes a separate catalog-to-reference discovery check for the dedicated Loops
 reference. Two tasks passed in the final sample after correcting an omitted billing warning. This manual check
 does not test installed-plugin activation or live operations; model and usage metrics were unavailable. See the

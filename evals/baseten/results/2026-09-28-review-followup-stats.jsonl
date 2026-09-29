@@ -1,0 +1,4 @@
+{"task_id":69,"variant":"old-reference","revision":"3b10f4c","passed":3,"total":4,"model":null,"provider":null,"tokens":null,"duration_seconds":null,"repetitions":1,"grading":"manual","live_operations":false}
+{"task_id":70,"variant":"old-reference","revision":"3b10f4c","passed":2,"total":4,"model":null,"provider":null,"tokens":null,"duration_seconds":null,"repetitions":1,"grading":"manual","live_operations":false}
+{"task_id":69,"variant":"updated-reference","reference_sha256":"d75df32804e07d185d35797ee85897c562fc9140376bc0174c8061ff546c4096","passed":4,"total":4,"model":null,"provider":null,"tokens":null,"duration_seconds":null,"repetitions":1,"grading":"manual","live_operations":false}
+{"task_id":70,"variant":"updated-reference","reference_sha256":"d75df32804e07d185d35797ee85897c562fc9140376bc0174c8061ff546c4096","passed":4,"total":4,"model":null,"provider":null,"tokens":null,"duration_seconds":null,"repetitions":1,"grading":"manual","live_operations":false}
