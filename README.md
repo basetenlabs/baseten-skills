@@ -95,6 +95,10 @@ Ask your agent to explain Baseten documentation, create a deployment, or manage 
 
 ## Evaluation results
 
+The [September 30 targeted check](evals/baseten/results/2026-09-30.md) covers managed Loops execution and native
+`--tail` behavior. All three with-skill answers passed their assertions in one manual sample per task. This does
+not establish general improvement or verify live execution; the final SSH prerequisite received source review only.
+
 The [Loops discovery follow-up](evals/baseten/results/2026-09-28.md#catalog-to-reference-discovery-follow-up) checks
 whether an agent finds the dedicated reference from the skill catalog and entrypoint. Both tasks passed in the
 final manual sample. This is not a live integration test or an installed-plugin activation benchmark.

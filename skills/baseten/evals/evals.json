@@ -311,7 +311,7 @@
       "expected_output": "Recommendation-only; uses the first-class Baseten CLI command for managed Loops client execution without starting a job.",
       "files": [],
       "assertions": [
-        {"text": "Uses `baseten loops exec --dir . --with-uv -- uv run python train.py` without a submission --tail flag and does not substitute raw `truss loops exec`, `b10 run`, or a nonexistent command.", "weight": "core"},
+        {"text": "Uses `baseten loops exec --dir . --with-uv -- uv run python train.py`, optionally adding `--tail` before `--`, and does not substitute raw `truss loops exec`, `b10 run`, or a nonexistent command.", "weight": "core"},
         {"text": "Explains that the command packages the current directory and runs the client as a managed Training Job; distinguishes active-profile submission authentication from the remote job's team-secret credential.", "weight": "core"},
         {"text": "Does not execute the command or create billable resources.", "weight": "core"}
       ]
@@ -346,7 +346,7 @@
           "weight": "core"
         },
         {
-          "text": "Uses baseten loops exec --dir . --with-uv -- uv run python train.py and separately follows logs with baseten train job logs --job-id <JOB_ID> --tail.",
+          "text": "Uses baseten loops exec --dir . --with-uv -- uv run python train.py and follows logs either by adding --tail before -- or by separately running baseten train job logs --job-id <JOB_ID> --tail.",
           "weight": "core"
         },
         {
@@ -405,7 +405,7 @@
       "assertions": [
         {"text": "Explains that staying awake and one successful API request do not establish sustained connectivity.", "weight": "core"},
         {"text": "Checks DNS, outbound HTTPS, network policies, and process suspension from the script's environment without asserting a provider-specific cause.", "weight": "core"},
-        {"text": "Offers baseten loops exec --dir . --with-uv -- uv run python train.py, checks installed availability, and follows logs separately.", "weight": "core"},
+        {"text": "Offers baseten loops exec --dir . --with-uv -- uv run python train.py, checks installed availability, and follows logs either by adding --tail before -- or with baseten train job logs --job-id <JOB_ID> --tail.", "weight": "core"},
         {"text": "Does not run commands or create resources.", "weight": "core"}
       ]
     },
@@ -437,6 +437,21 @@
         {"text": "Explains that the generated config does not preserve team selection and model push otherwise uses the default team.", "weight": "core"},
         {"text": "Checks checkpoint-team permission and Hugging Face secret availability before deployment.", "weight": "core"},
         {"text": "Does not deploy and requires confirmation for billable resources.", "weight": "core"}
+      ]
+    },
+    {
+      "id": 72,
+      "name": "train-loops-managed-client-tail",
+      "group": "train",
+      "complexity": 1,
+      "prompt": "I want to submit uv run python train.py from this directory as a managed Loops job and follow logs in the same command. I use Baseten CLI OAuth login and need the job result as JSON on stdout. How should I do this, and what happens if the job fails or I press Ctrl-C? How can I resume watching? Do not run anything.",
+      "expected_output": "Explains native managed-job log watching, output streams, OAuth refresh, failure and interruption behavior, and reconnecting without submitting another job.",
+      "files": [],
+      "assertions": [
+        {"text": "Uses baseten loops exec with --dir ., --with-uv, --tail, and --output json before -- uv run python train.py.", "weight": "core"},
+        {"text": "Explains that native log watching supports OAuth refresh and writes logs to stderr while the job result stays on stdout; does not claim the remote job receives the local OAuth profile.", "weight": "core"},
+        {"text": "States that a job failing to deploy or execute causes exit code 1 with --tail, that Ctrl-C stops watching without stopping the job, and that baseten train job logs --job-id <JOB_ID> --tail resumes watching the existing job.", "weight": "core"},
+        {"text": "Qualifies the command on installed CLI availability and does not execute commands or submit a job.", "weight": "core"}
       ]
     }
   ]

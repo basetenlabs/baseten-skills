@@ -100,7 +100,8 @@ not invent an idempotency key or assume repeating a model name makes retries saf
 ## Unattended SDK clients
 
 The client process orchestrates training and needs sustained outbound connectivity. Once available in the installed CLI,
-use managed execution rather than relying on a laptop to remain awake:
+use managed execution rather than relying on a laptop to remain awake. Your workspace must have Training SSH enabled;
+see the [Training SSH prerequisites](https://docs.baseten.co/training/ssh#prerequisites).
 
 ```sh
 baseten loops exec --dir . --with-uv -- uv run python train.py
@@ -109,12 +110,20 @@ baseten train job logs --job-id <JOB_ID> --tail
 
 The first command packages the directory selected by the required `--dir` flag and submits the client as a Training Job.
 Use `.` for the current project or pass another project path. The remote command runs from that directory. Submission
-returns a job ID; use it with the separate log command. Add `--output json` before `--` for a structured result with
-`job_id`. Do not add `--tail` to `loops exec`.
+returns a job ID; use it with the separate log command. To submit and follow logs in one command, add `--tail` before
+`--`:
+
+```sh
+baseten loops exec --dir . --with-uv --tail -- uv run python train.py
+```
+
+The native Baseten client streams logs to stderr and supports OAuth refresh. The job result stays on stdout; add
+`--output json` before `--` for a structured result with `job_id`. With `--tail`, a job that fails to deploy or execute
+causes exit code 1. Ctrl-C stops watching without stopping the job. Resume with the separate log command above.
 
 Submission uses the active Baseten CLI profile. The remote job receives `BASETEN_API_KEY` through a team secret, created
 on first use unless you supply a credential. Submission does not copy the active profile into the job. The delegated
-Truss process cannot refresh an OAuth token; the separate native log command can.
+Truss submission process cannot refresh an OAuth token.
 
 A third-party sandbox or hosted notebook can restrict networking even while the process stays running. Check DNS
 resolution and outbound HTTPS access from the environment running the script. Check proxy, VPN, firewall,

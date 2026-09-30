@@ -4,6 +4,11 @@ Use this guide to compare skill versions and review the latest results. Each dat
 
 ## Latest results
 
+The [September 30 native log-following check](results/2026-09-30.md) covers tasks 65, 69, and 72.
+The updated reference passed all assertions in one first-party Codex sample per task, including `loops exec --tail`
+with JSON output. This targeted manual check does not verify live operations or establish general improvement.
+A final Training SSH prerequisite sentence received source review only.
+
 The [edited config team follow-up](results/2026-09-28.md#edited-config-team-follow-up) checks task 71.
 The updated reference preserves both the CLI profile and checkpoint team in the push command. It passed four
 assertions in one read-only sample; no deployment was tested.
@@ -36,6 +41,7 @@ The report preserves both iterations separately. Do not merge their scores becau
 
 | Date | Experiment | Committed statistics |
 | --- | --- | --- |
+| [September 30, 2026](results/2026-09-30.md) | Native Loops log following; three tasks, one sample per condition | [Six answers](results/2026-09-30-stats.jsonl) |
 | [September 28, 2026](results/2026-09-28.md) | Withdrawn comparison and isolated, tool-free Loops follow-up | [Four final executions](results/2026-09-28-stats.jsonl) |
 | [September 9, 2026](results/2026-09-09.md) | GLM-5.2-Fast; 21-task version comparison plus two-task corrected follow-up | [69 executions](results/2026-09-09-stats.jsonl) |
 | [May 26, 2026](results/2026-05-26.md) | Opus 4.7; 16 tasks, five skill/MCP configurations, four repetitions | [320 executions](results/stats.jsonl) |
