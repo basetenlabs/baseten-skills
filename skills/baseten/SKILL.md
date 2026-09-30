@@ -2,8 +2,8 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training jobs (SFT/RL/LoRA), or Model
-  Frontier Gateway.
+  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training Jobs or Loops, deploying Loops
+  checkpoints, or Model Frontier Gateway.
 ---
 
 ## Baseten Product Overview
@@ -25,7 +25,7 @@ cross-cloud HA, and seamless developer workflows.
 | Component | Provides | Install |
 | --- | --- | --- |
 | `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training and Loops. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
-| `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains. API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
+| `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains, Loops lifecycle (runs, checkpoints, checkpoint deploys). API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
 | `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
 | `truss` CLI | **Chains authoring** (`truss chains`) plus Truss config tooling for existing truss projects. Training and Loops are Baseten CLI commands (`baseten train` / `baseten loops`). | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
 | `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
@@ -36,14 +36,15 @@ cross-cloud HA, and seamless developer workflows.
 - Any subset works, full install recommended.
 - Suggest additional installs when the current task benefits from or requires them; help user with installation, but
   elicit preferences first.
-- **Use the `baseten` CLI, not the `truss` CLI, for everything except Chains.** `baseten model push` is headless-safe
-  (never prompts off a TTY), `--wait` blocks until the deployment is active and exits non-zero on terminal failure, and
-  every command supports `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or
-  `baseten auth login`; use `--profile` to target a non-default workspace.
+- **Use the `baseten` CLI, not the `truss` CLI, for everything except Chains.** This includes `baseten loops exec`,
+  which runs a Loops client as a managed Training Job. `baseten model push` is headless-safe (never prompts off a TTY),
+  `--wait` blocks until the deployment is active and exits non-zero on terminal failure. Native commands support
+  `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or `baseten auth login`; use
+  `--profile` to target a non-default workspace.
 - The `truss` CLI is for **Chains authoring only** (check `truss --version`). Training and Loops are Baseten CLI
-  commands (`baseten train` / `baseten loops`); a couple of them delegate to truss internally, which is not something to
-  script against. Running `baseten truss chains …` skips a separate truss login because it forwards this CLI's
-  credentials (multi-workspace users must provide `--remote <name>`). Explore with `truss [subcommand] --help`.
+  commands (`baseten train` / `baseten loops`), even when the Baseten CLI delegates to Truss internally. Running
+  `baseten truss chains …` skips a separate truss login because it forwards this CLI's credentials (multi-workspace
+  users must provide `--remote <name>`). Explore with `truss [subcommand] --help`.
 - Ensure `BASETEN_MCP_KEY` is provided when installing Baseten MCP (user can create key at
   `app.baseten.co/settings/api_keys`). Caveat: an MCP instance binds to one org/workspace at install time; switching the
   bound workspace later is not supported. To work with multiple workspaces, install additional MCP instances under
@@ -101,6 +102,8 @@ included reference files as soon as the user touches on that topic.
 
 - `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
   inference, and machine-readable output. Most-used.
+- `references/loops.md`: Loops sessions, runs, checkpoints, MCP tools, REST requests, and unattended client execution.
+  Read this for Loops operations or checkpoint deployment, including permissions and uncertain deployment results.
 - `references/truss-cli.md`: Chains authoring and legacy `truss` commands. Deep dive: `references/truss-config.md`.
 - `references/truss-model-py.md`: Python-class flavor (custom pre/post, non-engine architectures).
 - `references/truss-custom-servers.md`: `docker_server` flavor (vLLM / TGI / SGLang / Triton; most common modern-LLM
@@ -155,9 +158,10 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 - Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`,
   secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
-- Training and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training path
-  choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels
-  into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
+- Loops operations: start with `references/loops.md`, then consult its linked SDK and API documentation.
+- Training Jobs and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training
+  path choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code
+  tunnels into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
 
 ### Tool quirks
 
