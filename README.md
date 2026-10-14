@@ -33,6 +33,8 @@ Install the Baseten agent toolkit globally for every coding agent on this machin
    Don't add an Authorization header or API key. The server uses OAuth, and I'll sign in to Baseten in my browser when it first connects.
 3. Add the docs MCP server: `npx add-mcp https://docs.baseten.co/mcp -n baseten_docs -g -y`
 
+If `add-mcp` stops because Claude Desktop doesn't support remote servers, rerun both `add-mcp` commands with an `-a` flag for each coding agent I use, such as `-a claude-code -a cursor`.
+
 Then tell me how to sign in to the backend server, how to verify the setup, and whether I need to restart my agent.
 ```
 
@@ -45,6 +47,10 @@ npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 ```
 
 - `-g` installs globally. `-y` confirms installation for all detected agents.
+- If Claude Desktop is installed, `add-mcp` stops without configuring any agent, because Claude Desktop accepts
+  remote servers only as connectors. Name the agents you use with `-a` instead, such as
+  `npx add-mcp https://api.baseten.co/mcp -g -y -a claude-code -a cursor`. Run `npx add-mcp list-agents` for the
+  other agent names.
 - Some agents prompt before reading skill reference files (they live outside your workspace). In Claude Code,
   allow these reads in `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
 
