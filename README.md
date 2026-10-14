@@ -50,10 +50,10 @@ npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 
 #### Connect with an API key
 
-Agents that run without a browser, such as agents in CI, can't complete the sign-in. Connect them with a dedicated [API key with management permissions](https://app.baseten.co/settings/api_keys) instead, replacing `<API_KEY>` with your key:
+Agents that run without a browser, such as agents in CI, can't complete the sign-in. Connect them with a dedicated [API key with management permissions](https://app.baseten.co/settings/api_keys) instead. Store the key in the `BASETEN_MCP_KEY` environment variable, for example from your CI secret store, so it stays out of your shell history:
 
 ```bash
-npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer <API_KEY>"
+npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"
 ```
 
 To create deployments, install the [Baseten CLI](https://docs.baseten.co/reference/cli/baseten/overview). `baseten model push` is the default path for creating and updating deployments:
