@@ -16,67 +16,45 @@ See [evaluation results](#evaluation-results) for measured performance and cover
 
 ### Requirements
 
-- To interact with your Baseten workspace, create an [API key with management permissions](https://app.baseten.co/settings/api_keys). Use a dedicated key so you can revoke it without affecting other work.
 - Install Node.js 18 or later to run the installation tools.
+- A Baseten account. The backend MCP server uses OAuth, so you sign in with your account instead of creating an API key.
 
 ### Install the toolkit
 
 #### Install with your agent
 
-Set the `BASETEN_MCP_KEY` environment variable in your shell. Replace `...` with your API key.
-
-On Linux or macOS:
-
-```bash
-export BASETEN_MCP_KEY=...
-```
-
-On Windows with PowerShell:
-
-```powershell
-$env:BASETEN_MCP_KEY = "..."
-```
-
-On Windows with Command Prompt:
-
-```bat
-set BASETEN_MCP_KEY=...
-```
-
-Then paste the following instructions into your agent:
+Paste the following prompt into your agent:
 
 ```text
-Install the Baseten agent toolkit following instructions from `github.com/basetenlabs/baseten-skills`.
+Install the Baseten agent toolkit globally for every coding agent on this machine:
 
-- use `npx skills add` and `npx add-mcp`
-- all global and for all agents (`-g -y`)
-- The baseten backend server needs auth header `Authorization: Bearer $BASETEN_MCP_KEY` (or `Authorization: Bearer $env:BASETEN_MCP_KEY` in PowerShell). Run the install commands in a shell that has `BASETEN_MCP_KEY` set so the env var expands; don't read or inline the key value.
+1. Install the `baseten` skill: `npx skills add basetenlabs/baseten-skills -g -y`
+2. Add the backend MCP server: `npx add-mcp https://api.baseten.co/mcp -g -y`
+   Don't add an Authorization header or API key. The server uses OAuth, and I'll sign in to Baseten in my browser when it first connects.
+3. Add the docs MCP server: `npx add-mcp https://docs.baseten.co/mcp -n baseten_docs -g -y`
+
+Then tell me how to sign in to the backend server, how to verify the setup, and whether I need to restart my agent.
 ```
 
 #### Install manually
 
-On Linux or macOS:
-
 ```bash
-export BASETEN_MCP_KEY=...
 npx skills add basetenlabs/baseten-skills -g -y
-npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"
-npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
-```
-
-On Windows with PowerShell:
-
-```powershell
-$env:BASETEN_MCP_KEY = "..."
-npx skills add basetenlabs/baseten-skills -g -y
-npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer $env:BASETEN_MCP_KEY"
+npx add-mcp https://api.baseten.co/mcp -g -y
 npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 ```
 
 - `-g` installs globally. `-y` confirms installation for all detected agents.
-- If your agent supports environment variable interpolation, reference `$BASETEN_MCP_KEY` in its MCP configuration.
 - Some agents prompt before reading skill reference files (they live outside your workspace). In Claude Code,
   allow these reads in `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
+
+#### Connect with an API key
+
+Agents that run without a browser, such as agents in CI, can't complete the sign-in. Connect them with a dedicated [API key with management permissions](https://app.baseten.co/settings/api_keys) instead. Store the key in the `BASETEN_MCP_KEY` environment variable, for example from your CI secret store, so it stays out of your shell history:
+
+```bash
+npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"
+```
 
 To create deployments, install the [Baseten CLI](https://docs.baseten.co/reference/cli/baseten/overview). `baseten model push` is the default path for creating and updating deployments:
 
@@ -89,7 +67,7 @@ Install the [Truss CLI](https://docs.baseten.co/reference/cli/truss/overview) as
 
 ## Use the toolkit
 
-After installation, follow your agent's instructions to reload its configuration. If your agent supports `/mcp` or `/mcps`, use that command to check the MCP connections. If the backend connection fails, verify `BASETEN_MCP_KEY` in the agent's configuration.
+After installation, follow your agent's instructions to reload its configuration. If your agent supports `/mcp` or `/mcps`, use that command to sign in to the backend server and check the MCP connections. The backend server acts as you. It works in your account's workspace and has your account's permissions.
 
 Ask your agent to explain Baseten documentation, create a deployment, or manage your workspace. Agents that support automatic skill selection can load the skill when needed. If your agent supports skill commands, you can also invoke `/baseten`.
 
