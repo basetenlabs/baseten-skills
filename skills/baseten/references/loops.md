@@ -12,9 +12,9 @@ connected MCP server's tools and input schemas, the hosted API reference, or `ba
 described here is not proof that the connected server or installed CLI supports it. If it is absent, report that
 limitation. Use the REST fallback only when that endpoint is documented and deployed.
 
-The backend MCP uses an API key for its configured organization. CLI OAuth login does not establish MCP OAuth support.
-REST requests use `Authorization: Bearer <API_KEY>` against `https://api.baseten.co`. These tools manage platform
-resources; they do not host or expose the Forge agent workflow.
+The backend MCP supports browser-based OAuth sign-in; logging in with the CLI does not sign in to the MCP server.
+Headless clients can authenticate with a management API key. REST requests use `Authorization: Bearer <API_KEY>` against
+`https://api.baseten.co`. These tools manage platform resources; they do not host or expose the Forge agent workflow.
 
 ## MCP tools and REST equivalents
 

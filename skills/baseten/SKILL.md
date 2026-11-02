@@ -25,7 +25,7 @@ cross-cloud HA, and seamless developer workflows.
 | Component | Provides | Install |
 | --- | --- | --- |
 | `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training and Loops. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
-| `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains, Loops lifecycle (runs, checkpoints, checkpoint deploys). API-key auth. | `npx add-mcp https://api.baseten.co/mcp -g -y --header "Authorization: Bearer ${BASETEN_MCP_KEY}"` |
+| `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains, Loops lifecycle (runs, checkpoints, checkpoint deploys). OAuth sign-in; API-key auth for headless clients. | `npx add-mcp https://api.baseten.co/mcp -g -y` |
 | `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
 | `truss` CLI | **Chains authoring** (`truss chains`) plus Truss config tooling for existing truss projects. Training and Loops are Baseten CLI commands (`baseten train` / `baseten loops`). | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
 | `llms.txt` | `baseten.co/llms.txt` (product + blog), `docs.baseten.co/llms.txt` (docs). | reachable via HTTP |
@@ -42,17 +42,18 @@ cross-cloud HA, and seamless developer workflows.
   `--output json` / `--jq`. Check `baseten version`. Auth comes from `BASETEN_API_KEY` or `baseten auth login`; use
   `--profile` to target a non-default workspace.
 - The `truss` CLI is for **Chains authoring only** (check `truss --version`). Training and Loops are Baseten CLI
-  commands (`baseten train` / `baseten loops`), even when the Baseten CLI delegates to Truss internally. Running
-  `baseten truss chains …` skips a separate truss login because it forwards this CLI's credentials (multi-workspace
-  users must provide `--remote <name>`). Explore with `truss [subcommand] --help`.
-- Ensure `BASETEN_MCP_KEY` is provided when installing Baseten MCP (user can create key at
-  `app.baseten.co/settings/api_keys`). Caveat: an MCP instance binds to one org/workspace at install time; switching the
-  bound workspace later is not supported. To work with multiple workspaces, install additional MCP instances under
-  different names with different keys (see last bullet of this section).
+  commands (`baseten train` / `baseten loops`), even when the Baseten CLI delegates to Truss internally; don't script
+  against that internal delegation. Running `baseten truss chains …` skips a separate truss login because it forwards
+  this CLI's credentials (multi-workspace users must provide `--remote <name>`). Explore with
+  `truss [subcommand] --help`.
+- The backend MCP uses OAuth by default: install it without an `Authorization` header. On first connect, the user signs
+  in to Baseten in the browser (in Claude Code, `/mcp` → `baseten` → Authenticate). The client refreshes tokens itself.
+  The server acts as the signed-in user, in that user's workspace and with that user's permissions.
+- Headless agents (no browser, e.g. CI) can't complete the sign-in. Add the backend MCP with an API key that has
+  management permissions instead, using `--header "Authorization: ******"`. Store the key in `BASETEN_MCP_KEY`; users
+  can create a key at `app.baseten.co/settings/api_keys`. An API-key instance binds to the key's workspace. To work with
+  multiple workspaces, install additional MCP instances under different names with different keys.
 - Docs MCP missing → grep / fetch `llms.txt`.
-- Backend MCP is API-key-only (currently); OAuth-only harnesses can still use the other components.
-- If backend MCP server is needed for different orgs/workspaces, add multiple MCP instances with different names/keys or
-  use env-var expansion in the agent's config file and set the env var to the respective workspace's key.
 
 ## Pick your authoring surface (for creating deployments)
 

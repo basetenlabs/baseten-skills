@@ -8,6 +8,7 @@ dependencies = [
   "truss>=0.10",  # so claude subprocesses can shell out to `truss …`
   "numpy>=1.26",
   "pandas>=2.2",  # tabular aggregation in analyze.py
+  "certifi>=2026.10.19",  # eMudhra/emSign CA compromise: older bundles still trust the compromised intermediates
 ]
 
 [dependency-groups]
