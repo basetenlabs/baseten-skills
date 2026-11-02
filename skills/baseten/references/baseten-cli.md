@@ -176,11 +176,9 @@ command's help. For choosing between managed Loops training and a custom contain
 <https://docs.baseten.co/training/index>. For SDK code, use the current Loops quickstart and supported-models docs
 instead of copying inference-model slugs into a trainer configuration.
 
-For Loops SDK work, install `baseten-loops` and import from `baseten.loops`. Creating a training client provisions GPUs;
-the paired sampler is provisioned when first requested. A running `TrainingClient` keeps the session warm. Close it when
-finished and explicitly deactivate the run with `baseten loops run deactivate --run-id <run_id> --yes` when the user
-wants to end the session. Deactivation shuts down trainer and sampler; saved checkpoints survive. See
-<https://docs.baseten.co/loops/quickstart>.
+For Loops SDK lifecycle, MCP tools, REST fallbacks, checkpoint deployment, and managed client execution, read
+[Loops operations](loops.md). Confirm command availability with `baseten loops exec --help` before recommending managed
+execution.
 
 Sources:
 
