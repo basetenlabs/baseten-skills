@@ -2,8 +2,8 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training jobs (SFT/RL/LoRA), or Model
-  Frontier Gateway.
+  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training jobs (SFT/RL/LoRA), operating
+  Sandboxes for agent code execution, or Model Frontier Gateway.
 ---
 
 ## Baseten Product Overview
@@ -14,6 +14,8 @@ cross-cloud HA, and seamless developer workflows.
 - **Dedicated Inference** - deploy any model, performance-optimized + horizontally scaled. Authored as auto-wrapped
   Truss server, custom Docker server, or compound/orchestrated deployment via Chains.
 - **Model APIs** - pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
+- **Sandboxes** - isolated environments for an agent's commands and files, with application previews and persistent
+  volumes. See `references/sandboxes.md`.
 - **Training** - two paths, both driven by `baseten train` / `baseten loops`: **Truss Train** (BYO container, any
   framework, full hardware control) and **Loops** (Tinker-compatible managed SDK for SFT + async RL; paired trainer +
   sampling server, live weight transfers, one-click checkpoint deploy). Multi-node, 1T+ params, 10TB+ datasets,
@@ -24,7 +26,7 @@ cross-cloud HA, and seamless developer workflows.
 
 | Component | Provides | Install |
 | --- | --- | --- |
-| `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training and Loops. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
+| `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training, Loops, and Sandboxes. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
 | `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains. OAuth sign-in. | `npx add-mcp https://api.baseten.co/mcp -g -y` |
 | `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
 | `truss` CLI | **Chains authoring** (`truss chains`) plus Truss config tooling for existing truss projects. Training and Loops are Baseten CLI commands (`baseten train` / `baseten loops`). | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
@@ -99,6 +101,8 @@ Real-world nuances the table can't capture:
 **Skill References** (`ls references/` in skill dir, complementary to hosted docs). Be generous to read any of the
 included reference files as soon as the user touches on that topic.
 
+- `references/sandboxes.md`: create and operate Baseten Sandboxes, connect SDKs or runtime MCP tools, preview
+  applications, and preserve files across sandboxes.
 - `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
   inference, and machine-readable output. Most-used.
 - `references/truss-cli.md`: Chains authoring and legacy `truss` commands. Deep dive: `references/truss-config.md`.
@@ -156,7 +160,8 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
   secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
 - Training and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training path
-  choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code tunnels
+  choice see `training/index.mdx`; for Loops see `loops/quickstart.mdx` for the serverless first run and
+  `loops/availability-modes/overview.mdx` for serverless and dedicated billing and placement; for SSH / VS Code tunnels
   into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
 
 ### Tool quirks
