@@ -34,6 +34,8 @@ Install the Baseten agent toolkit globally for every coding agent on this machin
    Don't add an Authorization header or API key. The server uses OAuth, and I'll sign in to Baseten in my browser when it first connects.
 3. Add the docs MCP server: `npx add-mcp https://docs.baseten.co/mcp -n baseten_docs -g -y`
 
+If `add-mcp` stops because Claude Desktop doesn't support remote servers, rerun both `add-mcp` commands with an `-a` flag for each coding agent I use, such as `-a claude-code -a cursor`.
+
 Then tell me how to sign in to the backend server, how to verify the setup, and whether I need to restart my agent.
 ```
 
@@ -46,6 +48,10 @@ npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y
 ```
 
 - `-g` installs globally. `-y` confirms installation for all detected agents.
+- If Claude Desktop is installed, `add-mcp` stops without configuring any agent, because Claude Desktop accepts
+  remote servers only as connectors. Name the agents you use with `-a` instead, such as
+  `npx add-mcp https://api.baseten.co/mcp -g -y -a claude-code -a cursor`. Run `npx add-mcp list-agents` for the
+  other agent names.
 - Some agents prompt before reading skill reference files (they live outside your workspace). In Claude Code,
   allow these reads in `settings.json`: `"permissions": { "allow": ["Read(~/.claude/skills/**)"] }`.
 
@@ -75,6 +81,16 @@ Ask your agent to explain Baseten documentation, create a deployment, or manage 
 ## Evaluation results
 
 The [November 2 targeted evaluation](evals/baseten/results/2026-11-02.md) checks sandbox persistence and SDK/preview authentication guidance. Both with-skill answers passed their three assertions in one execution each. This is recommendation-only coverage, with a documented baseline grading error; it does not verify live sandbox workflows or establish a quality improvement.
+
+The [September 30 targeted check](evals/baseten/results/2026-09-30.md) covers managed Loops execution and native
+`--tail` behavior. All three with-skill answers passed their assertions in one manual sample per task. This does
+not establish general improvement or verify live execution; the final SSH prerequisite received source review only.
+
+The [Loops discovery follow-up](evals/baseten/results/2026-09-28.md#catalog-to-reference-discovery-follow-up) checks
+whether an agent finds the dedicated reference from the skill catalog and entrypoint. Both tasks passed in the
+final manual sample. This is not a live integration test or an installed-plugin activation benchmark.
+
+The [September 28 targeted evaluation](evals/baseten/results/2026-09-28.md) covers managed Loops client execution and checkpoint deployment safety, with follow-ups for sandbox networking, CLI deployment previews, and preserving checkpoint teams when pushing edited configs. The initial comparison was withdrawn because its baseline could read skill files. See the report for the isolated follow-ups and their limitations. These checks do not replace the full-suite comparison below.
 
 The [September 9 evaluation](evals/baseten/results/2026-09-09.md) compared the refreshed skill, the June skill, and no skill on the same model with both MCP servers enabled.
 
