@@ -2,7 +2,7 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training Jobs, Loops, or RL Rollouts,
+  Docker servers, engine-only configs, Chains), calling hosted Model APIs, running Training Jobs, Loops, or RL Rollouts,
   deploying Loops checkpoints, operating Sandboxes for agent code execution, or Model Frontier Gateway.
 ---
 
@@ -63,19 +63,19 @@ cross-cloud HA, and seamless developer workflows.
 First-pass decision. Many real workloads blend rows — treat this as a starting point, not a rule. When unsure, sketch
 the IO shape and per-step hardware needs before picking.
 
-Surfaces are stacked by opinion-strength, not just author convenience: **engines** (TRT-LLM, BEI, BIS-LLM) ship
-performance-tuned for one architecture and are the fastest path when they fit; **custom Docker servers** wrap mature
-inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code in the
-request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management, structured
-error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and Chains share
-live-patch iteration (`baseten model push --watch`); all flavors support per-replica autoscaling, scale-to-zero, and
-environments / promotions.
+Surfaces are stacked by opinion-strength, not just author convenience: **engines** (BEI / BEI-Bert, Engine-Builder-LLM,
+BIS-LLM) ship performance-tuned for one architecture and are the fastest path when they fit; **custom Docker servers**
+wrap mature inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code
+in the request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management,
+structured error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and
+Chains share live-patch iteration (`baseten model push --watch`); all flavors support per-replica autoscaling,
+scale-to-zero, and environments / promotions.
 
 | You want… | Flavor | Specialization | When NOT to pick |
 | --- | --- | --- | --- |
 | Hosted LLM, no deploy step | Model APIs | `model-apis.md` | model not in catalog; need custom hardware, requirements, stability... |
 | LLM on an off-the-shelf server (vLLM / SGLang / TGI / Triton / NIM) | Custom Docker server | `truss-custom-servers.md` | the server doesn't exist or you need Python in the request path |
-| LLM/embedding via a Baseten engine (TRT-LLM / BEI / BIS-LLM); minimal config, no Python | Engine-only `config.yaml` | `truss-config.md` (engines section) | architecture not covered by an engine; you need custom logic |
+| LLM/embedding via a Baseten engine (BEI / BEI-Bert / Engine-Builder-LLM / BIS-LLM); minimal config, no Python | Engine-only `config.yaml` | `truss-config.md` (engines section) | architecture not covered by an engine; you need custom logic |
 | Custom Python in the request path (pre/post, custom arch, weird IO) | Python-class Truss (`model.py`) | `truss-model-py.md` + `truss-config.md` | an engine or off-the-shelf server fits — pick that, it's faster to ship |
 | Multi-step pipeline with **heterogeneous hardware / per-step scaling** (RAG, ASR→LLM→TTS, fan-out, chunking) | Chains | `truss-chains.md` | one-stage or homogeneous — a single Truss is simpler |
 
@@ -86,7 +86,7 @@ Orthogonal operational surfaces (independent of which flavor above):
 - Gradual traffic shift to new deployment (pause/resume/cancel) → rolling deployments:
   `deployment/rolling-deployments.mdx`
 - Call a deployment → `inference-api.md` (custom) or `model-apis.md` (hosted)
-- High-throughput batch calls (embeddings, reranking) → Performance client (Rust, 1200+ req/s):
+- High-throughput batch calls (embeddings, reranking) → Performance client (Python / Node.js / Rust, 1200+ req/s):
   `reference/sdk/performance-client/overview.mdx`
 - Programmatic control plane → `management-api.md`
 
@@ -96,8 +96,8 @@ Real-world nuances the table can't capture:
   while internal Chainlets use engines.
 - **Existing Truss models can join Chains.** Use `TrussChainlet` and `TrussHandle` for HTTP or WebSocket calls; read
   <https://docs.baseten.co/development/chain/truss-chainlets> before wiring this integration.
-- **Engine performance vs flexibility.** TRT-LLM is the fastest path for many LLMs but its config surface is opaque.
-  Worth the trade only when latency/throughput is a real constraint.
+- **Engine performance vs flexibility.** Engine-Builder-LLM is the fastest path for dense LLMs, but its config surface
+  is opaque. Worth the trade only when latency/throughput is a real constraint.
 
 ## Routing
 
@@ -162,8 +162,8 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 
 ### Non-obvious placements within `references/`
 
-- Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`,
-  secrets, resources, and BDN `weights`).
+- Engine-only deploys (BEI / BEI-Bert / Engine-Builder-LLM / BIS-LLM) → `truss-config.md` engines section (also owns
+  `model_cache`, secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
 - Loops operations: start with `references/loops.md`, then consult its linked SDK and API documentation.
 - Training Jobs and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training

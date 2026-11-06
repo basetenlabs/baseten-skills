@@ -15,6 +15,7 @@ Check `baseten version`. On macOS or Linux, install with Homebrew:
 
 ```sh
 brew tap basetenlabs/baseten
+brew trust --formula basetenlabs/baseten/baseten
 brew install baseten
 ```
 
@@ -126,7 +127,7 @@ relative to `/v1/`:
 baseten api management models                          # GET /v1/models
 baseten api management models --field name=my-model    # POST a field
 baseten api management models --jq '.models[].id'
-baseten api inference --model-id <id> --data '{"x":1}'
+baseten api inference production/predict --model-id <id> --field prompt=hello
 ```
 
 The method defaults to GET, or POST when `--field`, `--raw-field`, or `--input` is given. The Management API OpenAPI
