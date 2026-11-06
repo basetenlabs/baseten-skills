@@ -166,6 +166,9 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
   `model_cache`, secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
 - Loops operations: start with `references/loops.md`, then consult its linked SDK and API documentation.
+- Persistent weights and data mounted into deployments: BDN volumes (`baseten volume push` / `baseten volume sync`,
+  `bdn:` URIs, read-only mounts) rather than baked images; see `truss-config.md` and
+  <https://docs.baseten.co/development/volumes/overview>.
 - Training Jobs and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training
   path choice see `training/index.mdx`; for Loops see `loops/quickstart.mdx` for the serverless first run,
   `loops/availability-modes/overview.mdx` for serverless and dedicated billing and placement, and
@@ -180,10 +183,11 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 - Full doc pages: `cat`/`head` on `.mdx` paths via `query_docs_filesystem_baseten`. Alternatively,
   `docs.baseten.co/<path>.md` also works and is faster for single-page reads.
 - Inference SSH (terminal in running container, requires org enablement) → `model-dev-loop.md` § Inference SSH.
-- `list_library_models` is **baseten curated catalog** (~tens of pre-optimized hosted models, mostly popular open-source
-  LLMs / embeddings). Models are good starter models to play, but not for custom authoring, specific performance needs,
-  finetuning and private HF models etc. No useful tags (modality etc.) — filter by `display_name` / `hf_repo_id`
-  substring.
+- `list_library_models` is the **Baseten curated catalog** (~tens of one-click models): language models for chat,
+  reasoning, and vision, plus decision models for classification and scoring, with audio input and web search on some
+  models. Good starting points, not a fit for custom authoring, specific performance needs, fine-tuning, or private
+  Hugging Face models. Tags are sparse; filter by `display_name` / `hf_repo_id` substring and confirm feature support
+  and pricing on the Model APIs page.
 - Blog content is not in the docs MCP. Fetch `baseten.co/llms.txt` and search for relevant posts.
 
 ### MCP introspection vs. invocation

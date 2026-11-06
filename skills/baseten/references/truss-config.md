@@ -123,6 +123,12 @@ Legacy `model_cache` with `use_volume: true` downloads to distributed storage at
 different legacy mode; do not describe all `model_cache` configurations as baking weights into an image. See
 <https://docs.baseten.co/development/model/model-cache>.
 
+To publish files once and mount them read-only in every deployment, use a BDN volume instead: `baseten volume push` or
+`baseten volume sync` seals an immutable version, and deployments reference the volume as a `bdn:` URI, either a tag
+(`bdn:weights/llama:prod`) or a pinned digest (`bdn:weights/llama@b3:<hex>`). A bare volume name or tag resolves when
+each replica starts, so a push during a deployment can leave replicas serving two versions. Pin the digest in
+`config.yaml` when every replica must serve identical files. See <https://docs.baseten.co/development/volumes/overview>.
+
 **Multi-variant repos: narrow `allow_patterns`, set `variant` at load.** HF repos for many diffusion / vision models
 ship both fp32 and fp16 (sometimes bf16) copies of the same weights. A naive `allow_patterns: ["*.safetensors"]` pulls
 both — doubles disk and ~doubles `model.load()` time (the loader may pick the fp32 set and you pay for it even when you
