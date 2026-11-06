@@ -2,8 +2,8 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training Jobs or Loops, deploying Loops
-  checkpoints, operating Sandboxes for agent code execution, or Model Frontier Gateway.
+  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training Jobs, Loops, or RL Rollouts,
+  deploying Loops checkpoints, operating Sandboxes for agent code execution, or Model Frontier Gateway.
 ---
 
 ## Baseten Product Overview
@@ -16,10 +16,11 @@ cross-cloud HA, and seamless developer workflows.
 - **Model APIs** - pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
 - **Sandboxes** - isolated environments for an agent's commands and files, with application previews and persistent
   volumes. See `references/sandboxes.md`.
-- **Training** - two paths, both driven by `baseten train` / `baseten loops`: **Truss Train** (BYO container, any
-  framework, full hardware control) and **Loops** (Tinker-compatible managed SDK for SFT + async RL; paired trainer +
-  sampling server, live weight transfers, one-click checkpoint deploy). Multi-node, 1T+ params, 10TB+ datasets,
-  H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels into containers.
+- **Training** - three paths: **Training Jobs** (`baseten train`; BYO container, any framework, full hardware control),
+  **Loops** (`baseten loops`; Tinker-compatible managed SDK for SFT + async RL, with a paired trainer and sampling
+  server, live weight transfers, and one-click checkpoint deploy), and **RL Rollouts** (scale the rollouts of your own
+  RL trainer). Multi-node, 1T+ params, 10TB+ datasets, H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels
+  into containers.
 - **Frontier Gateway** - operate your own foundation model B2C.
 
 ## Agent DX Toolkit
@@ -86,7 +87,7 @@ Orthogonal operational surfaces (independent of which flavor above):
   `deployment/rolling-deployments.mdx`
 - Call a deployment → `inference-api.md` (custom) or `model-apis.md` (hosted)
 - High-throughput batch calls (embeddings, reranking) → Performance client (Rust, 1200+ req/s):
-  `inference/performance-client.mdx`
+  `reference/sdk/performance-client/overview.mdx`
 - Programmatic control plane → `management-api.md`
 
 Real-world nuances the table can't capture:
@@ -107,8 +108,9 @@ included reference files as soon as the user touches on that topic.
   applications, and preserve files across sandboxes.
 - `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
   inference, and machine-readable output. Most-used.
-- `references/loops.md`: Loops sessions, runs, checkpoints, MCP tools, REST requests, and unattended client execution.
-  Read this for Loops operations or checkpoint deployment, including permissions and uncertain deployment results.
+- `references/loops.md`: Loops sessions, runs, checkpoints, capacity refusals, MCP tools, REST requests, and unattended
+  client execution. Read this for Loops operations or checkpoint deployment, including serverless versus dedicated
+  placement and uncertain deployment results.
 - `references/truss-cli.md`: Chains authoring and legacy `truss` commands. Deep dive: `references/truss-config.md`.
 - `references/truss-model-py.md`: Python-class flavor (custom pre/post, non-engine architectures).
 - `references/truss-custom-servers.md`: `docker_server` flavor (vLLM / TGI / SGLang / Triton; most common modern-LLM
@@ -165,9 +167,11 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
 - Loops operations: start with `references/loops.md`, then consult its linked SDK and API documentation.
 - Training Jobs and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training
-  path choice see `training/index.mdx`; for Loops see `loops/quickstart.mdx` for the serverless first run and
-  `loops/availability-modes/overview.mdx` for serverless and dedicated billing and placement; for SSH / VS Code tunnels
-  into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
+  path choice see `training/index.mdx`; for Loops see `loops/quickstart.mdx` for the serverless first run,
+  `loops/availability-modes/overview.mdx` for serverless and dedicated billing and placement, and
+  `troubleshooting/loops.mdx` for `429` capacity and `org_cap` refusals; for a working recipe see the Loops cookbook at
+  `github.com/basetenlabs/loops-cookbook`; for SSH / VS Code tunnels into training containers see `training/ssh.mdx` and
+  `training/remote-access.mdx`.
 
 ### Tool quirks
 
