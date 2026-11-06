@@ -72,9 +72,13 @@ If both are set, `instance_type` wins and overrides `cpu`, `memory`, `accelerato
 
 Accelerator naming (exact strings the platform accepts):
 
-- Single GPU: `L4`, `A10G`, `A100`, `H100`, `H200`, `B200`.
-- Multi-GPU: append `:N`, for example `H100:2`, `A100:8`, `B200:4`.
-- H100 / H200 `instance_type` strings use just `"H100:2"` (no vCPU/RAM suffix); other GPUs take `"L4:4x16"` style.
+- Single `L4` or `A100`: `<GPU>:<vCPU>x<MEMORY>`, for example `"L4:4x16"`.
+- Single `T4` or `A10G`: `<GPU>x<vCPU>x<MEMORY>`, with no colon, for example `"T4x4x16"`.
+- Multi-GPU: `<GPU>:<COUNT>x<vCPU>x<MEMORY>`, for example `"A100:2x24x288"`.
+- `H100`, `H200`, `B200`, `RTX-PRO-6000`: `<GPU>` or `<GPU>:<COUNT>`, for example `"H100:2"`.
+- Fractional H100: `"H100MIG"`.
+
+Naming is not uniform across GPU families, so copy the exact SKU from the instance-type tables.
 
 For the full current list of instance types, see <https://docs.baseten.co/deployment/resources> and the management API
 instance-types endpoint.
@@ -119,6 +123,12 @@ Legacy `model_cache` with `use_volume: true` downloads to distributed storage at
 different legacy mode; do not describe all `model_cache` configurations as baking weights into an image. See
 <https://docs.baseten.co/development/model/model-cache>.
 
+To publish files once and mount them read-only in every deployment, use a BDN volume instead: `baseten volume push` or
+`baseten volume sync` seals an immutable version, and deployments reference the volume as a `bdn:` URI, either a tag
+(`bdn:weights/llama:prod`) or a pinned digest (`bdn:weights/llama@b3:<hex>`). A bare volume name or tag resolves when
+each replica starts, so a push during a deployment can leave replicas serving two versions. Pin the digest in
+`config.yaml` when every replica must serve identical files. See <https://docs.baseten.co/development/volumes/overview>.
+
 **Multi-variant repos: narrow `allow_patterns`, set `variant` at load.** HF repos for many diffusion / vision models
 ship both fp32 and fp16 (sometimes bf16) copies of the same weights. A naive `allow_patterns: ["*.safetensors"]` pulls
 both — doubles disk and ~doubles `model.load()` time (the loader may pick the fp32 set and you pay for it even when you
@@ -153,12 +163,18 @@ Python Truss server. See `truss-custom-servers.md` for the full field list; in s
 
 Engine-only deployments skip `model.py` and skip a custom server: the engine runs the model directly from `config.yaml`.
 
-- **TensorRT-LLM** via the `trt_llm` block. Fields include `max_batch_size`, `quantization_type`,
-  `tensor_parallel_count`, `num_builder_gpus`. Tradeoffs and valid value ranges are not all documented centrally; read
-  <https://docs.baseten.co/engines> and the schema file for the current surface.
-- **Baseten Embedding Inference (BEI)**: embedding-model engine, OpenAI-compatible `/v1/embeddings` endpoint.
-- **Baseten Inference Stack LLM (BIS-LLM)** and **Engine-Builder-LLM**: LLM engines, OpenAI-compatible
-  `/v1/chat/completions` endpoint.
+Baseten engines are BEI, BEI-Bert, Engine-Builder-LLM, and BIS-LLM. They all build on TensorRT-LLM, which is the runtime
+rather than a separate engine name.
+
+- **Engine-Builder-LLM** (dense text generation) and **BEI** (embedding, reranking, classification) both use the
+  `trt_llm` block, with `trt_llm.build` for build-time fields such as `max_batch_size`, `quantization_type`,
+  `tensor_parallel_count`, and `num_builder_gpus`, and `trt_llm.runtime` for runtime fields. BEI sets
+  `trt_llm.inference_stack: v1` and `trt_llm.build.base_model: encoder`.
+- **BEI-Bert** is the BERT-family BEI variant for encoder models under 4B parameters
+  (`trt_llm.build.base_model: encoder_bert`).
+- **BIS-LLM** (MoE and Enterprise serving) uses its own `bis_llm` block.
+- Valid value ranges are not all documented centrally; read <https://docs.baseten.co/engines> and the schema file for
+  the current surface.
 
 When to pick which engine, and the exact `config.yaml` shape for each, is covered on the docs site under `/engines`.
 Choose an engine using the workload and current supported-architecture documentation; preserve an explicit user choice.

@@ -453,6 +453,52 @@
         {"text": "States that a job failing to deploy or execute causes exit code 1 with --tail, that Ctrl-C stops watching without stopping the job, and that baseten train job logs --job-id <JOB_ID> --tail resumes watching the existing job.", "weight": "core"},
         {"text": "Qualifies the command on installed CLI availability and does not execute commands or submit a job.", "weight": "core"}
       ]
+    },
+    {
+      "id": 73,
+      "name": "plan-sandbox-persistence",
+      "group": "operate",
+      "complexity": 2,
+      "prompt": "We use Baseten Sandboxes for a research agent. We need project files to survive deleting one sandbox and opening another. Show the CLI workflow and explain how this differs from model-weight volumes. Do not execute commands, create resources, or change our configuration.",
+      "expected_output": "Recommendation-only; uses sandbox volumes, respects attachment and region constraints, and preserves data through sandbox recreation.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Uses baseten sandbox volume and a sandbox create volume mount, rather than baseten volume or a Blaxel command.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains that a volume survives sandbox deletion, must share its team and region, and can attach to only one sandbox at a time.",
+          "weight": "core"
+        },
+        {
+          "text": "Checks volume readiness before mounting and detachment before reuse; distinguishes deleting a sandbox from permanently deleting its volume.",
+          "weight": "core"
+        }
+      ]
+    },
+    {
+      "id": 74,
+      "name": "choose-baseten-sandbox-sdk-auth",
+      "group": "create",
+      "complexity": 2,
+      "prompt": "Our TypeScript application needs Baseten Sandboxes to run user code and show a private web preview. We already signed in with baseten auth login. Which SDK and credentials should the application use, and how should the preview be authenticated? Explain the setup without installing packages, creating a sandbox, or exposing a public service.",
+      "expected_output": "Recommendation-only; uses the Baseten Sandbox SDK and keeps workspace, sandbox, and preview authentication separate.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Selects @basetenlabs/sandbox for the TypeScript application instead of @blaxel/core, and uses a Baseten workspace API key.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains that CLI sign-in does not authenticate the SDK application and does not request pasted credentials or put a workspace API key in a preview URL.",
+          "weight": "core"
+        },
+        {
+          "text": "Keeps the preview private, distinguishes preview tokens from sandbox access tokens, and accounts for a reachable application process and port.",
+          "weight": "core"
+        }
+      ]
     }
   ]
 }

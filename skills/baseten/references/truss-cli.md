@@ -10,8 +10,8 @@ promotion, environments, and autoscaling. The `truss push` / `truss watch` flags
 superseded there — for a legacy truss script, see the published reference at
 <https://docs.baseten.co/reference/cli/truss/push>.
 
-For the `truss chains` subcommand group itself, see `truss-chains.md`. The `truss train` group (Truss Train) is not
-covered here; see <https://docs.baseten.co/reference/cli/training>.
+For the `truss chains` subcommand group itself, see `truss-chains.md`. The `truss train` group is not covered here; see
+<https://docs.baseten.co/reference/cli/training/training-cli>.
 
 **Prerequisites:** `truss-config.md` (what's in `config.yaml`); `truss-chains.md` (Chains authoring).
 
