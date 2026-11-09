@@ -287,7 +287,7 @@ def check_isolation(init_event: dict, mode: Mode, skill_name: str) -> dict:
 
     passed = not (mcp_diff["unexpected"] or mcp_diff["missing"]
                   or skill_diff["unexpected"] or skill_diff["missing"]
-                  or plugin_diff["unexpected"])
+                  or plugin_diff["unexpected"] or plugin_diff["missing"])
     return {
         "passed": passed,
         "expected": {"mcp": sorted(expected_mcp), "skills": sorted(expected_skills), "plugins": sorted(expected_plugins)},

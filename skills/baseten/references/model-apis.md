@@ -28,7 +28,7 @@ Authorization: Bearer $BASETEN_API_KEY
 
 `Bearer` is what the OpenAI SDK sets and what the docs prescribe for MAPI — use it.
 
-Route suffixes under that base URL:
+Each route runs on the origin `https://inference.baseten.co`; the base URL above adds `/v1`:
 
 - `/v1/chat/completions`: OpenAI Chat Completions.
 - `/v1/responses`: OpenAI Responses, for clients that speak it, including the OpenAI Agents SDK.

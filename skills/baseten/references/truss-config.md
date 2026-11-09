@@ -70,13 +70,18 @@ resources:
 
 If both are set, `instance_type` wins and overrides `cpu`, `memory`, `accelerator`.
 
-Accelerator naming (exact strings the platform accepts):
+`instance_type` SKUs (exact strings the platform accepts):
 
+- CPU-only: `<vCPU>x<MEMORY>`, for example `"4x16"`.
 - Single `L4` or `A100`: `<GPU>:<vCPU>x<MEMORY>`, for example `"L4:4x16"`.
 - Single `T4` or `A10G`: `<GPU>x<vCPU>x<MEMORY>`, with no colon, for example `"T4x4x16"`.
 - Multi-GPU: `<GPU>:<COUNT>x<vCPU>x<MEMORY>`, for example `"A100:2x24x288"`.
 - `H100`, `H200`, `B200`, `RTX-PRO-6000`: `<GPU>` or `<GPU>:<COUNT>`, for example `"H100:2"`.
 - Fractional H100: `"H100MIG"`.
+
+These SKUs belong in `resources.instance_type`. `resources.accelerator` takes a GPU name with an optional count, such as
+`L4` or `H100:2`, and never the vCPU and memory suffix. Setting `cpu`, `memory`, and `accelerator` separately lets
+Baseten select the smallest matching instance.
 
 Naming is not uniform across GPU families, so copy the exact SKU from the instance-type tables.
 

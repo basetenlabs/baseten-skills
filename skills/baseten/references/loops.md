@@ -8,16 +8,23 @@ refusals. For training code, start from the [Loops quickstart](https://docs.base
 
 ## Modes, billing, and capacity
 
-A run uses the serverless mode by default when the model, LoRA rank, and sequence length support it, and the dedicated
-mode otherwise. Set `scope` to `serverless` to refuse a run that serverless can't take, or `deployment` to reserve a
-trainer and sampler for the run. See [availability modes](https://docs.baseten.co/loops/availability-modes/overview).
-Serverless bills for tokens trained and sampled; dedicated bills for GPU time, including replicas and spot capacity.
+A run uses the serverless mode by default when the workspace has serverless access to the model and sequence length, and
+the run's LoRA rank and sequence length fit what serverless supports. Otherwise, it uses the dedicated mode. A run that
+reuses another run's deployments also stays in the dedicated mode, so don't promise token billing for it. Set `scope` to
+`serverless` to refuse a run that serverless can't take, or `deployment` to reserve a trainer and sampler for the run.
+See [availability modes](https://docs.baseten.co/loops/availability-modes/overview). Serverless bills for tokens trained
+and sampled; dedicated bills for GPU time, including replicas and spot capacity.
 
-Creating a run or a standalone sampler waits for capacity. While Baseten's shared capacity is fully committed, Loops
-returns a `429` and the SDK retries for a few minutes before raising `LoopsCapacityError`. A `details.limit` of
-`org_cap` means the organization hit its own concurrency limit instead, so retrying doesn't help. Resolve it by
-retrying, [requesting more access](https://www.baseten.co/talk-to-us/loops-signup/), or moving the run to the dedicated
-mode. See [capacity and quota errors](https://docs.baseten.co/troubleshooting/loops#resolve-capacity-and-quota-errors).
+Creating a run or a standalone sampler waits for capacity, and two refusals call for different responses. When Baseten's
+shared pool is fully committed, Loops returns a `429` with `details.reason` of `loops_capacity`; the SDK retries for up
+to ten attempts over a few minutes, then raises `LoopsCapacityError`. If it still fails, wait for other runs to finish
+or move the run to the dedicated mode, which gives it GPUs of its own. An `org_cap` refusal is your organization's own
+limit of concurrent runs and samplers, so the capacity retry window doesn't apply and waiting alone won't free a slot:
+deactivate a run the user no longer needs, with approval, or
+[request a higher limit](https://www.baseten.co/talk-to-us/loops-signup/). Dedicated runs have limits of their own: a
+`429` with `Could not schedule trainer` means no eligible GPUs for the requested shape, and a `403` means the
+organization's trainer quota is full. See
+[capacity and quota errors](https://docs.baseten.co/troubleshooting/loops#resolve-capacity-and-quota-errors).
 
 ## Availability and authentication
 

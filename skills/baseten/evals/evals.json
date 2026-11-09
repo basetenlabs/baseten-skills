@@ -499,6 +499,52 @@
           "weight": "core"
         }
       ]
+    },
+    {
+      "id": 75,
+      "name": "plan-loops-mode-and-billing",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "We're budgeting a Loops LoRA fine-tune on Qwen3.6-35B-A3B and need to know which availability mode it will run in and how it will be billed. Explain how Loops picks between serverless and dedicated, including the conditions that force dedicated, and what each mode bills for. Don't create a run or execute commands.",
+      "expected_output": "Recommendation-only; default serverless only when the workspace has access and the configuration is supported, dedicated for reuse, and separate token billing from GPU-time billing.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Explains that the default mode is serverless only when the workspace has serverless access to the model and sequence length and the run's LoRA rank and sequence length are supported.",
+          "weight": "core"
+        },
+        {
+          "text": "Names reuse of another run's deployments as a case that stays in the dedicated mode, and explains that scope=serverless fails instead of falling back while scope=deployment reserves a trainer and sampler.",
+          "weight": "core"
+        },
+        {
+          "text": "Bills serverless per trained and sampled token and dedicated per GPU time, rather than promising token billing for a dedicated run.",
+          "weight": "core"
+        }
+      ]
+    },
+    {
+      "id": 76,
+      "name": "diagnose-loops-org-capacity-limit",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "Creating a Loops training run in serverless mode failed with a 429 whose details.limit was org_cap. Why didn't the SDK's retries clear it, and what can we do? Name the error the SDK eventually raises and our options. Don't create, deactivate, or modify anything.",
+      "expected_output": "Recommendation-only; separates the organization's own concurrency limit from shared-pool capacity and gives the org_cap remedies.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Identifies details.limit=org_cap as the organization's own limit on concurrent runs and samplers, not shared-pool capacity.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains that the SDK retries a shared-capacity 429 with loops_capacity up to ten times before raising LoopsCapacityError, and that retries don't free capacity held by the organization's limit.",
+          "weight": "core"
+        },
+        {
+          "text": "Offers deactivating an unneeded run with approval or requesting a higher limit, instead of presenting retrying as the fix.",
+          "weight": "core"
+        }
+      ]
     }
   ]
 }
