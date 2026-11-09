@@ -1,8 +1,14 @@
 # Baseten Model APIs
 
-Model APIs are Baseten's managed catalog of pre-hosted LLMs (DeepSeek, GLM, Kimi, and others). OpenAI-compatible, with
-an Anthropic Messages API in beta. No deployment step. Pay per million tokens. Pick this over a custom Truss deployment
-whenever a supported model does the job; you avoid packaging, infra choices, and scaling decisions entirely.
+Model APIs are Baseten's managed catalog of pre-hosted language models (DeepSeek, GLM, Kimi, and others) and decision
+models. No deployment step. Pay per million tokens. Pick this over a custom Truss deployment whenever a supported model
+does the job; you avoid packaging, infra choices, and scaling decisions entirely.
+
+Language models answer on three routes at the same base URL: OpenAI Chat Completions, OpenAI Responses (the surface the
+OpenAI Agents SDK expects), and Anthropic Messages in beta. Decision models classify, route, and score inputs through
+the System One API (`/v1/systemone`) instead of chat completions; see
+<https://docs.baseten.co/inference/model-apis/decision-models>. The per-model feature table marks which models take
+audio input, web search, and vision.
 
 This is a distinct surface from the inference API for custom deployments (see `inference-api.md`). Both speak
 OpenAI-compatible chat completions on their respective endpoints, but Model APIs live at a single shared endpoint
@@ -21,6 +27,13 @@ Authorization: Bearer $BASETEN_API_KEY
 ```
 
 `Bearer` is what the OpenAI SDK sets and what the docs prescribe for MAPI — use it.
+
+Each route runs on the origin `https://inference.baseten.co`; the base URL above adds `/v1`:
+
+- `/v1/chat/completions`: OpenAI Chat Completions.
+- `/v1/responses`: OpenAI Responses, for clients that speak it, including the OpenAI Agents SDK.
+- `/v1/messages`: Anthropic Messages (beta), with server-side tool execution for web search and page fetching.
+- `/v1/systemone`: System One, for decision models.
 
 API keys are created at <https://app.baseten.co/settings/api_keys>. Inference-scoped keys are sufficient for MAPI calls
 (don't grant management scope for end-user inference clients).
@@ -120,7 +133,7 @@ Everything else (tool calling, structured outputs, streaming, vision where suppo
 ## Feature support
 
 - **Tool calling**: supported by all models.
-- **Structured outputs**: supported by all currently listed models; check the live matrix when selecting a model.
+- **Structured outputs**: all listed models except Muse Spark Open; check the live matrix when selecting a model.
 - **Reasoning / extended thinking**: model-specific (see <https://docs.baseten.co/inference/model-apis/reasoning>).
 - **Vision**: model-specific.
 - **Audio, `top_p`, `top_k`**: model-specific. Check the current feature table rather than assuming family-wide support.
@@ -152,6 +165,7 @@ Standard HTTP:
 | 404 | Model not found |
 | 429 | Rate limit exceeded |
 | 500 | Internal server error |
+| 529 | Overloaded; retry with backoff (can happen even under your rate limit) |
 
 ## Gotchas
 
@@ -162,8 +176,10 @@ Standard HTTP:
 - **Use the right model name.** Model APIs require a catalog slug; custom deployments require the server's served name.
 - **Authentication:** use `Authorization: Bearer …`, including with the Anthropic SDK. Custom-deployment and management
   APIs also support Bearer; existing legacy `Api-Key` clients remain supported.
-- **Prefix caching is on by default.** Requests sharing a prefix with a recent request will see cache behavior; see the
-  pricing docs for how that maps to billing.
+- **Prefix caching is on by default, and session affinity is what makes it reliable.** Send `x-session-affinity` with a
+  stable ID on every request in a conversation or agent task so related requests land on the same replica, where the
+  shared prefix stays in the KV cache. Coding agents such as Claude Code, Codex, and OpenCode send one themselves. See
+  <https://docs.baseten.co/inference/model-apis/pricing-and-limits>.
 - **Reuse the OpenAI client.** A new `OpenAI()` per request loses connection pooling; keep one client per process for
   agents and high-QPS loops.
 

@@ -81,9 +81,24 @@ Semantics:
 - If the source deployment can be reused, promotion is an in-place attachment and is fast.
 - A new deployment is created when: the source is already attached to another environment, the target environment has a
   different instance type or resource profile, or the environment has "Re-deploy on promotion" enabled.
-- On promotion, the new deployment inherits the previous environment deployment's autoscaling settings; the previous
-  deployment is demoted (but kept).
+- On promotion, the new deployment inherits the previous environment deployment's autoscaling settings.
 - Only one active promotion per environment at a time.
+
+What happens to the outgoing deployment is the environment's `promotion_cleanup_strategy`, which applies to every
+promotion into that environment, rolling or not:
+
+- `SCALE_TO_ZERO` (default): sets the previous deployment's minimum replicas to 0 and leaves its maximum alone, so it
+  drains over the scale-down delay, stays `ACTIVE`, and scales back up on demand.
+- `KEEP`: leaves the previous deployment running at its current replica count.
+- `DEACTIVATE`: deactivates the previous deployment, releasing its replicas and its deployment slot.
+
+`SCALE_TO_ZERO` and `DEACTIVATE` both leave the previous deployment's minimum replicas at 0 permanently; reset its
+autoscaling settings before promoting it back into service. Only `DEACTIVATE` frees the deployment slot, so under the
+other strategies each promotion leaves one more deployment counting against the workspace deployment limit.
+
+Configure the environment's promotion behavior, including cleanup, re-deploy, and the rolling-deploy config, with
+`baseten model environment update-promotion`. The flags you pass are the only ones changed, and the settings apply to
+future promotions. See <https://docs.baseten.co/reference/cli/baseten/model#update-promotion>.
 
 ## Rolling deployments
 
@@ -95,8 +110,11 @@ Details: <https://docs.baseten.co/deployment/rolling-deployments>.
 
 Key points:
 
-- Autoscaling is **suspended during a rolling deployment** for the whole environment. Use `replica_overhead_percent` to
-  pre-provision capacity if traffic is expected to grow mid-rollout.
+- Autoscaling **keeps working during a rolling deployment**, including while the rollout is paused: pausing stops the
+  traffic shift, not capacity management. Each deployment still in the rollout keeps at least one replica, and the
+  replica split accounts for rollout state, so it need not match the traffic split.
+- Environments with a fixed replica count (`min_replica == max_replica`) hold their baseline during the rollout; set
+  `replica_overhead_percent` to add headroom to the previous deployment before traffic starts shifting.
 - Rolling deployments are **not supported for Chains**.
 - "Canary deployments" are deprecated in favor of rolling deployments.
 
@@ -175,12 +193,12 @@ Per-request log correlation uses the `X-Baseten-Request-Id` header returned on e
 log this automatically; custom servers must format JSON logs with a top-level `request_id` field (see
 `truss-custom-servers.md`).
 
-Broader observability (metrics export, alerting, tracing): <https://docs.baseten.co/observability>.
+Broader observability (metrics export, alerting, tracing): <https://docs.baseten.co/observability/logs>.
 
 ## Gotchas
 
-- **Rolling deployments suspend autoscaling** for the environment for their whole duration. If replicas look wrong
-  during a rollout, this is why.
+- **Rolling deployments keep autoscaling** for the environment, including while paused. A replica split that doesn't
+  match the traffic split mid-rollout is expected; capacity tracks combined demand plus rollout state.
 - **`production` is reserved** and cannot be deleted without deleting the model.
 - **Development deployments scale to zero** unless kept warm, which is the default for `baseten model push --watch` and
   `baseten model watch` (disable with `--watch-no-keepalive` / `--no-keepalive`). Published deployments do not scale to

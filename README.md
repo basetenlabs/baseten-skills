@@ -9,6 +9,7 @@ You can ask your agent to:
 - Check the status of models in your workspace.
 - Find product guidance in the Baseten documentation.
 - Write deployment configurations and API clients.
+- Run agent code in Sandboxes, preview applications, and preserve project files.
 
 See [evaluation results](#evaluation-results) for measured performance and coverage.
 
@@ -78,6 +79,13 @@ After installation, follow your agent's instructions to reload its configuration
 Ask your agent to explain Baseten documentation, create a deployment, or manage your workspace. Agents that support automatic skill selection can load the skill when needed. If your agent supports skill commands, you can also invoke `/baseten`.
 
 ## Evaluation results
+
+The [November 9 targeted evaluation](evals/baseten/results/2026-11-09.md) checks Loops availability-mode selection and
+`org_cap` capacity handling. Both with-skill answers passed their three assertions in one manually graded execution
+each. The run named the skill copy explicitly, so it checks guidance content rather than skill discovery, and it does
+not verify live runs, billing, or capacity behavior.
+
+The [November 2 targeted evaluation](evals/baseten/results/2026-11-02.md) checks sandbox persistence and SDK/preview authentication guidance. Both with-skill answers passed their three assertions in one execution each. This is recommendation-only coverage, with a documented baseline grading error; it does not verify live sandbox workflows or establish a quality improvement.
 
 The [September 30 targeted check](evals/baseten/results/2026-09-30.md) covers managed Loops execution and native
 `--tail` behavior. All three with-skill answers passed their assertions in one manual sample per task. This does

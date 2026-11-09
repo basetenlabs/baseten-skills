@@ -74,8 +74,8 @@ Chain management mirrors models with `/v1/chains/...`. Notable:
 - **`production` endpoints vs environment endpoints differ.** `/v1/models/{id}/deployments/production/...` addresses the
   production deployment directly; `/v1/models/{id}/environments/{env_name}/...` addresses an environment (production is
   one). Pick the right one.
-- **Rolling deployments suspend autoscaling** for the environment for their duration; PATCHing mid-rollout won't behave
-  as expected.
+- **Rolling deployments keep autoscaling running** for the environment, paused or not. Changing replica counts
+  mid-rollout interacts with the rollout's own capacity management; prefer letting the rollout finish.
 - **One active promotion per environment at a time.** Subsequent requests rejected until the current one
   completes/pauses/cancels.
 - **Production cannot be deleted** unless the model itself is deleted.

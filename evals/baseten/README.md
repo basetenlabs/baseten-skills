@@ -4,6 +4,13 @@ Use this guide to compare skill versions and review the latest results. Each dat
 
 ## Latest results
 
+The [November 9 report](results/2026-11-09.md) covers Loops availability-mode selection and `org_cap` capacity
+handling on two with-skill tasks, one execution each, with no MCP servers and manual grading. Both answers passed their
+three assertions. The run named the skill copy explicitly, so it checks guidance content rather than skill discovery,
+and it does not verify live runs, billing, or capacity behavior.
+
+The [November 2 report](results/2026-11-02.md) covers two sandbox guidance tasks, with and without the skill and without MCP servers: four initial executions plus two with-skill follow-ups after merging main, one repetition per task and condition. Both final with-skill answers passed their three assertions. This targeted smoke run includes a manual grading caveat and does not verify runtime behavior or establish an improvement over the previous skill.
+
 The [September 30 native log-following check](results/2026-09-30.md) covers tasks 65, 69, and 72.
 The updated reference passed all assertions in one first-party Codex sample per task, including `loops exec --tail`
 with JSON output. This targeted manual check does not verify live operations or establish general improvement.
@@ -41,6 +48,8 @@ The report preserves both iterations separately. Do not merge their scores becau
 
 | Date | Experiment | Committed statistics |
 | --- | --- | --- |
+| [November 9, 2026](results/2026-11-09.md) | GLM-5.3-Fast; Loops mode selection and `org_cap` handling; two tasks, with skill only, no MCPs | [2 executions](results/2026-11-09-stats.jsonl) |
+| [November 2, 2026](results/2026-11-02.md) | GLM-5.3-Fast; sandbox guidance, two tasks, with/without skill, no MCPs | [4 initial executions](results/2026-11-02-stats.jsonl), [2 post-merge executions](results/2026-11-02-merged-stats.jsonl) |
 | [September 30, 2026](results/2026-09-30.md) | Native Loops log following; three tasks, one sample per condition | [Six answers](results/2026-09-30-stats.jsonl) |
 | [September 28, 2026](results/2026-09-28.md) | Withdrawn comparison and isolated, tool-free Loops follow-up | [Four final executions](results/2026-09-28-stats.jsonl) |
 | [September 9, 2026](results/2026-09-09.md) | GLM-5.2-Fast; 21-task version comparison plus two-task corrected follow-up | [69 executions](results/2026-09-09-stats.jsonl) |

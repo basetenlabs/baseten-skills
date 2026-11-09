@@ -1,16 +1,36 @@
 # Loops operations
 
-Use this reference for Loops lifecycle operations, checkpoint deployment, and running SDK clients unattended. For
-training code, use the [Loops quickstart](https://docs.baseten.co/loops/quickstart) and
+Use this reference for Loops lifecycle operations, checkpoint deployment, running SDK clients unattended, and capacity
+refusals. For training code, start from the [Loops quickstart](https://docs.baseten.co/loops/quickstart), the
+[Loops cookbook](https://github.com/basetenlabs/loops-cookbook/tree/main), and the
 [SDK reference](https://docs.baseten.co/reference/sdk/loops/overview). Select a model from
 [supported models](https://docs.baseten.co/loops/supported-models), not the inference model catalog.
 
+## Modes, billing, and capacity
+
+A run uses the serverless mode by default when the workspace has serverless access to the model and sequence length, and
+the run's LoRA rank and sequence length fit what serverless supports. Otherwise, it uses the dedicated mode. A run that
+reuses another run's deployments also stays in the dedicated mode, so don't promise token billing for it. Set `scope` to
+`serverless` to refuse a run that serverless can't take, or `deployment` to reserve a trainer and sampler for the run.
+See [availability modes](https://docs.baseten.co/loops/availability-modes/overview). Serverless bills for tokens trained
+and sampled; dedicated bills for GPU time, including replicas and spot capacity.
+
+Creating a run or a standalone sampler waits for capacity, and two refusals call for different responses. When Baseten's
+shared pool is fully committed, Loops returns a `429` with `details.reason` of `loops_capacity`; the SDK retries for up
+to ten attempts over a few minutes, then raises `LoopsCapacityError`. If it still fails, wait for other runs to finish
+or move the run to the dedicated mode, which gives it GPUs of its own. An `org_cap` refusal is your organization's own
+limit of concurrent runs and samplers, so the capacity retry window doesn't apply and waiting alone won't free a slot:
+deactivate a run the user no longer needs, with approval, or
+[request a higher limit](https://www.baseten.co/talk-to-us/loops-signup/). Dedicated runs have limits of their own: a
+`429` with `Could not schedule trainer` means no eligible GPUs for the requested shape, and a `403` means the
+organization's trainer quota is full. See
+[capacity and quota errors](https://docs.baseten.co/troubleshooting/loops#resolve-capacity-and-quota-errors).
+
 ## Availability and authentication
 
-This reference is staged for the Loops MCP and checkpoint API releases. Before recommending an operation, inspect the
-connected MCP server's tools and input schemas, the hosted API reference, or `baseten loops exec --help`. An operation
-described here is not proof that the connected server or installed CLI supports it. If it is absent, report that
-limitation. Use the REST fallback only when that endpoint is documented and deployed.
+Before recommending an operation, inspect the connected MCP server's tools and input schemas, the hosted API reference,
+or `baseten loops --help`. An operation described here is not proof that the connected server or installed CLI supports
+it. If it is absent, report that limitation. Use the REST fallback only when that endpoint is documented and deployed.
 
 The backend MCP supports browser-based OAuth sign-in; logging in with the CLI does not sign in to the MCP server.
 Headless clients can authenticate with a management API key. REST requests use `Authorization: Bearer <API_KEY>` against
@@ -38,6 +58,13 @@ Confirm the user's intent before creating billable training, sampling, or deploy
 run. Creating an SDK training client provisions GPUs; the SDK provisions the paired sampler when first requested. A
 running `TrainingClient` keeps the session warm. Close the client when finished, and explicitly deactivate the run when
 the user wants to stop its resources. Saved checkpoints survive run deactivation.
+
+## CLI surface
+
+`baseten loops run create|list|describe|logs|deactivate` covers run lifecycle,
+`baseten loops checkpoint list|files|deploy` covers checkpoints and their deployment, `baseten loops usage` reports GPU
+allocations, and `baseten loops exec` runs a client as a managed Training Job. Check `baseten loops --help` for the
+installed surface.
 
 ## Interactive checkpoint deployment
 
@@ -99,9 +126,9 @@ not invent an idempotency key or assume repeating a model name makes retries saf
 
 ## Unattended SDK clients
 
-The client process orchestrates training and needs sustained outbound connectivity. Once available in the installed CLI,
-use managed execution rather than relying on a laptop to remain awake. Your workspace must have Training SSH enabled;
-see the [Training SSH prerequisites](https://docs.baseten.co/training/ssh#prerequisites).
+The client process orchestrates training and needs sustained outbound connectivity. Use `baseten loops exec` for managed
+execution rather than relying on a laptop to remain awake. Your workspace must have Training SSH enabled; see the
+[Training SSH prerequisites](https://docs.baseten.co/training/ssh#prerequisites).
 
 ```sh
 baseten loops exec --dir . --with-uv -- uv run python train.py
@@ -130,20 +157,20 @@ resolution and outbound HTTPS access from the environment running the script. Ch
 idle-connection, and process-suspension policies. One successful API request does not establish sustained connectivity.
 Do not assume a specific provider blocks Loops without evidence from that environment.
 
-## Sources and release checks
+## Sources and checks
 
 - [Loops concepts](https://docs.baseten.co/loops/concepts) covers client execution and resource behavior.
+- [Where to run the script](https://docs.baseten.co/loops/where-to-run) covers running locally versus on Baseten with
+  `baseten loops exec`.
+- [Availability modes](https://docs.baseten.co/loops/availability-modes/overview) covers serverless and dedicated
+  billing and placement.
 - [Deploy a checkpoint](https://docs.baseten.co/loops/deploy-checkpoints) covers CLI previews and deployment.
+- [Capacity and quota errors](https://docs.baseten.co/troubleshooting/loops#resolve-capacity-and-quota-errors) covers
+  the `429` and `403` responses above.
 - [Loops API reference](https://docs.baseten.co/reference/loops-api/overview) is the public source for REST contracts.
+  The deploy request takes `checkpoint_ids`, `model_name`, `instance_type_id`, and `hf_secret_name`.
 - [Loops CLI reference](https://docs.baseten.co/reference/cli/baseten/loops) documents released commands.
 
-Before publishing this reference, deploy backend PRs [30996](https://github.com/basetenlabs/baseten/pull/30996) and
-[30741](https://github.com/basetenlabs/baseten/pull/30741), release CLI
-[115](https://github.com/basetenlabs/baseten-cli/pull/115), and publish docs
-[1616](https://github.com/basetenlabs/docs.baseten.co/pull/1616) plus the checkpoint-deployment API reference. The new
-endpoint example above is staged against #30741's request schema; it must match the hosted reference before this skill
-ships. Skills are not the source of truth for unreleased product behavior.
-
-Then verify live MCP discovery and input schemas, released CLI help, and the linked documentation. A live job or
-deployment smoke test needs explicit approval to spend compute and a cleanup plan. Offline evaluations do not verify
-live authentication, permissions, billing, or deployment behavior.
+Verify live MCP discovery and input schemas, released CLI help, and the linked documentation before promising an
+operation. A live job or deployment smoke test needs explicit approval to spend compute and a cleanup plan. Offline
+evaluations do not verify live authentication, permissions, billing, or deployment behavior.

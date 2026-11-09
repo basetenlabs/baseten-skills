@@ -453,6 +453,98 @@
         {"text": "States that a job failing to deploy or execute causes exit code 1 with --tail, that Ctrl-C stops watching without stopping the job, and that baseten train job logs --job-id <JOB_ID> --tail resumes watching the existing job.", "weight": "core"},
         {"text": "Qualifies the command on installed CLI availability and does not execute commands or submit a job.", "weight": "core"}
       ]
+    },
+    {
+      "id": 73,
+      "name": "plan-sandbox-persistence",
+      "group": "operate",
+      "complexity": 2,
+      "prompt": "We use Baseten Sandboxes for a research agent. We need project files to survive deleting one sandbox and opening another. Show the CLI workflow and explain how this differs from model-weight volumes. Do not execute commands, create resources, or change our configuration.",
+      "expected_output": "Recommendation-only; uses sandbox volumes, respects attachment and region constraints, and preserves data through sandbox recreation.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Uses baseten sandbox volume and a sandbox create volume mount, rather than baseten volume or a Blaxel command.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains that a volume survives sandbox deletion, must share its team and region, and can attach to only one sandbox at a time.",
+          "weight": "core"
+        },
+        {
+          "text": "Checks volume readiness before mounting and detachment before reuse; distinguishes deleting a sandbox from permanently deleting its volume.",
+          "weight": "core"
+        }
+      ]
+    },
+    {
+      "id": 74,
+      "name": "choose-baseten-sandbox-sdk-auth",
+      "group": "create",
+      "complexity": 2,
+      "prompt": "Our TypeScript application needs Baseten Sandboxes to run user code and show a private web preview. We already signed in with baseten auth login. Which SDK and credentials should the application use, and how should the preview be authenticated? Explain the setup without installing packages, creating a sandbox, or exposing a public service.",
+      "expected_output": "Recommendation-only; uses the Baseten Sandbox SDK and keeps workspace, sandbox, and preview authentication separate.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Selects @basetenlabs/sandbox for the TypeScript application instead of @blaxel/core, and uses a Baseten workspace API key.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains that CLI sign-in does not authenticate the SDK application and does not request pasted credentials or put a workspace API key in a preview URL.",
+          "weight": "core"
+        },
+        {
+          "text": "Keeps the preview private, distinguishes preview tokens from sandbox access tokens, and accounts for a reachable application process and port.",
+          "weight": "core"
+        }
+      ]
+    },
+    {
+      "id": 75,
+      "name": "plan-loops-mode-and-billing",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "We're budgeting a Loops LoRA fine-tune on Qwen3.6-35B-A3B and need to know which availability mode it will run in and how it will be billed. Explain how Loops picks between serverless and dedicated, including the conditions that force dedicated, and what each mode bills for. Don't create a run or execute commands.",
+      "expected_output": "Recommendation-only; default serverless only when the workspace has access and the configuration is supported, dedicated for reuse, and separate token billing from GPU-time billing.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Explains that the default mode is serverless only when the workspace has serverless access to the model and sequence length and the run's LoRA rank and sequence length are supported.",
+          "weight": "core"
+        },
+        {
+          "text": "Names reuse of another run's deployments as a case that stays in the dedicated mode, and explains that scope=serverless fails instead of falling back while scope=deployment reserves a trainer and sampler.",
+          "weight": "core"
+        },
+        {
+          "text": "Bills serverless per trained and sampled token and dedicated per GPU time, rather than promising token billing for a dedicated run.",
+          "weight": "core"
+        }
+      ]
+    },
+    {
+      "id": 76,
+      "name": "diagnose-loops-org-capacity-limit",
+      "group": "train",
+      "complexity": 2,
+      "prompt": "Creating a Loops training run in serverless mode failed with a 429 whose details.limit was org_cap. Why didn't the SDK's retries clear it, and what can we do? Name the error the SDK eventually raises and our options. Don't create, deactivate, or modify anything.",
+      "expected_output": "Recommendation-only; separates the organization's own concurrency limit from shared-pool capacity and gives the org_cap remedies.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Identifies details.limit=org_cap as the organization's own limit on concurrent runs and samplers, not shared-pool capacity.",
+          "weight": "core"
+        },
+        {
+          "text": "Explains that the SDK retries a shared-capacity 429 with loops_capacity up to ten times before raising LoopsCapacityError, and that retries don't free capacity held by the organization's limit.",
+          "weight": "core"
+        },
+        {
+          "text": "Offers deactivating an unneeded run with approval or requesting a higher limit, instead of presenting retrying as the fix.",
+          "weight": "core"
+        }
+      ]
     }
   ]
 }

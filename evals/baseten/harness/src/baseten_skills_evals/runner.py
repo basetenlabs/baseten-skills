@@ -52,10 +52,11 @@ PRE_HOOK_TIMEOUT_S = 360
 # Grace period for draining pipes after the executor's process group is killed.
 KILL_DRAIN_TIMEOUT_S = 30
 
-# Skills bundled into the claude binary that leak through every isolation. Set
-# at runner startup via probe_builtin_skills() so an upgraded binary doesn't
+# Skills and plugins bundled into the claude binary that appear in isolation. Set
+# at runner startup via probe_builtins() so an upgraded binary doesn't
 # silently flag every run.
 BUILTIN_SKILLS: frozenset[str] = frozenset()
+BUILTIN_PLUGINS: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -233,8 +234,8 @@ def setup_workdir(base: Path, skill_dir: Path | None) -> Path:
     return outputs
 
 
-def probe_builtin_skills(bench_dir: Path, model: str | None = None) -> frozenset[str]:
-    """One-shot probe: launch claude in max-isolation to capture binary-bundled skills."""
+def probe_builtins(bench_dir: Path, model: str | None = None) -> tuple[frozenset[str], frozenset[str]]:
+    """Launch claude in max-isolation to capture binary-bundled skills and plugins."""
     probe = bench_dir / "_probe"
     probe.mkdir(exist_ok=True)
     (probe / "run").mkdir(exist_ok=True)
@@ -257,7 +258,12 @@ def probe_builtin_skills(bench_dir: Path, model: str | None = None) -> frozenset
     result = next((e for e in reversed(events) if e.get("type") == "result"), None)
     if res.returncode or init is None or not result_success(result):
         raise RuntimeError(f"provider/isolation probe failed; see {probe}")
-    return frozenset(init.get("skills", []))
+    return frozenset(init.get("skills", [])), plugin_ids(init)
+
+
+def plugin_ids(init_event: dict) -> frozenset[str]:
+    # Newer Claude versions emit plugin descriptors, rather than plain names.
+    return frozenset(json.dumps(p, sort_keys=True) for p in init_event.get("plugins", []))
 
 
 def check_isolation(init_event: dict, mode: Mode, skill_name: str) -> dict:
@@ -272,8 +278,8 @@ def check_isolation(init_event: dict, mode: Mode, skill_name: str) -> dict:
     expected_skills = set(BUILTIN_SKILLS) | ({skill_name} if mode.skill else set())
     actual_skills = set(init_event.get("skills", []))
 
-    expected_plugins: set = set()
-    actual_plugins = set(init_event.get("plugins", []))
+    expected_plugins = set(BUILTIN_PLUGINS)
+    actual_plugins = plugin_ids(init_event)
 
     mcp_diff = {"unexpected": sorted(actual_mcp - expected_mcp), "missing": sorted(expected_mcp - actual_mcp)}
     skill_diff = {"unexpected": sorted(actual_skills - expected_skills), "missing": sorted(expected_skills - actual_skills)}
@@ -281,7 +287,7 @@ def check_isolation(init_event: dict, mode: Mode, skill_name: str) -> dict:
 
     passed = not (mcp_diff["unexpected"] or mcp_diff["missing"]
                   or skill_diff["unexpected"] or skill_diff["missing"]
-                  or plugin_diff["unexpected"])
+                  or plugin_diff["unexpected"] or plugin_diff["missing"])
     return {
         "passed": passed,
         "expected": {"mcp": sorted(expected_mcp), "skills": sorted(expected_skills), "plugins": sorted(expected_plugins)},
@@ -741,9 +747,10 @@ def main() -> int:
         raise ValueError("resume provenance differs from the original run")
     provenance_file.write_text(json.dumps(run_provenance, indent=2))
 
-    global BUILTIN_SKILLS
-    BUILTIN_SKILLS = probe_builtin_skills(bench_dir, args.model)
+    global BUILTIN_SKILLS, BUILTIN_PLUGINS
+    BUILTIN_SKILLS, BUILTIN_PLUGINS = probe_builtins(bench_dir, args.model)
     _log(f"builtin_skills (from probe): {sorted(BUILTIN_SKILLS)}")
+    _log(f"builtin_plugins (from probe): {sorted(BUILTIN_PLUGINS)}")
     _log(f"modes={[m.name for m in modes]} evals={[e['id'] for e in eval_set]} runs={args.runs} num_workers={args.num_workers}")
 
     # Pre-create eval roots + metadata so workers only touch their own subdir.

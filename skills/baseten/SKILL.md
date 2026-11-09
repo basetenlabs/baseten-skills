@@ -2,8 +2,8 @@
 name: baseten
 description: >-
   Load for any work involving Baseten - deploying/operating models on Dedicated Inference (Truss, custom 
-  Docker servers, TRT-LLM engines, Chains), calling hosted Model APIs, running Training Jobs or Loops, deploying Loops
-  checkpoints, or Model Frontier Gateway.
+  Docker servers, engine-only configs, Chains), calling hosted Model APIs, running Training Jobs, Loops, or RL Rollouts,
+  deploying Loops checkpoints, operating Sandboxes for agent code execution, or Model Frontier Gateway.
 ---
 
 ## Baseten Product Overview
@@ -14,17 +14,20 @@ cross-cloud HA, and seamless developer workflows.
 - **Dedicated Inference** - deploy any model, performance-optimized + horizontally scaled. Authored as auto-wrapped
   Truss server, custom Docker server, or compound/orchestrated deployment via Chains.
 - **Model APIs** - pre-optimized hosted APIs for popular models. Path to graduate to dedicated.
-- **Training** - two paths, both driven by `baseten train` / `baseten loops`: **Truss Train** (BYO container, any
-  framework, full hardware control) and **Loops** (Tinker-compatible managed SDK for SFT + async RL; paired trainer +
-  sampling server, live weight transfers, one-click checkpoint deploy). Multi-node, 1T+ params, 10TB+ datasets,
-  H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels into containers.
+- **Sandboxes** - isolated environments for an agent's commands and files, with application previews and persistent
+  volumes. See `references/sandboxes.md`.
+- **Training** - three paths: **Training Jobs** (`baseten train`; BYO container, any framework, full hardware control),
+  **Loops** (`baseten loops`; Tinker-compatible managed SDK for SFT + async RL, with a paired trainer and sampling
+  server, live weight transfers, and one-click checkpoint deploy), and **RL Rollouts** (scale the rollouts of your own
+  RL trainer). Multi-node, 1T+ params, 10TB+ datasets, H100/H200/B200. Remote access: SSH and VS Code/Cursor tunnels
+  into containers.
 - **Frontier Gateway** - operate your own foundation model B2C.
 
 ## Agent DX Toolkit
 
 | Component | Provides | Install |
 | --- | --- | --- |
-| `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training and Loops. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
+| `baseten` CLI | **Deploy and operate models** (`baseten model push`, `--watch` for the dev loop), workspace management, Model APIs, training, Loops, and Sandboxes. Headless-safe: never prompts off a TTY; `--output json` / `--jq` for automation. | See `references/baseten-cli.md` |
 | `baseten` MCP | Interact with backend (~REST API, CRUD): models, deployments, training, environments, secrets, chains, Loops lifecycle (runs, checkpoints, checkpoint deploys). OAuth sign-in; API-key auth for headless clients. | `npx add-mcp https://api.baseten.co/mcp -g -y` |
 | `baseten_docs` MCP | Semantic search + filesystem of `docs.baseten.co`. No auth. | `npx add-mcp https://docs.baseten.co/mcp -n "baseten_docs" -g -y` |
 | `truss` CLI | **Chains authoring** (`truss chains`) plus Truss config tooling for existing truss projects. Training and Loops are Baseten CLI commands (`baseten train` / `baseten loops`). | `uv tool install truss` (or `pip install truss --upgrade`; respect user package manager: uv, poetry...) |
@@ -60,19 +63,19 @@ cross-cloud HA, and seamless developer workflows.
 First-pass decision. Many real workloads blend rows — treat this as a starting point, not a rule. When unsure, sketch
 the IO shape and per-step hardware needs before picking.
 
-Surfaces are stacked by opinion-strength, not just author convenience: **engines** (TRT-LLM, BEI, BIS-LLM) ship
-performance-tuned for one architecture and are the fastest path when they fit; **custom Docker servers** wrap mature
-inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code in the
-request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management, structured
-error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and Chains share
-live-patch iteration (`baseten model push --watch`); all flavors support per-replica autoscaling, scale-to-zero, and
-environments / promotions.
+Surfaces are stacked by opinion-strength, not just author convenience: **engines** (BEI / BEI-Bert, Engine-Builder-LLM,
+BIS-LLM) ship performance-tuned for one architecture and are the fastest path when they fit; **custom Docker servers**
+wrap mature inference servers (vLLM, SGLang, TGI, Triton, NIM); **Python Truss** is the escape hatch for arbitrary code
+in the request path; **Chains** add typed inter-step transport with built-in rate limiting, connection management,
+structured error propagation, and binary IO — features you'd otherwise rebuild around N raw Trusses. Python Truss and
+Chains share live-patch iteration (`baseten model push --watch`); all flavors support per-replica autoscaling,
+scale-to-zero, and environments / promotions.
 
 | You want… | Flavor | Specialization | When NOT to pick |
 | --- | --- | --- | --- |
 | Hosted LLM, no deploy step | Model APIs | `model-apis.md` | model not in catalog; need custom hardware, requirements, stability... |
 | LLM on an off-the-shelf server (vLLM / SGLang / TGI / Triton / NIM) | Custom Docker server | `truss-custom-servers.md` | the server doesn't exist or you need Python in the request path |
-| LLM/embedding via a Baseten engine (TRT-LLM / BEI / BIS-LLM); minimal config, no Python | Engine-only `config.yaml` | `truss-config.md` (engines section) | architecture not covered by an engine; you need custom logic |
+| LLM/embedding via a Baseten engine (BEI / BEI-Bert / Engine-Builder-LLM / BIS-LLM); minimal config, no Python | Engine-only `config.yaml` | `truss-config.md` (engines section) | architecture not covered by an engine; you need custom logic |
 | Custom Python in the request path (pre/post, custom arch, weird IO) | Python-class Truss (`model.py`) | `truss-model-py.md` + `truss-config.md` | an engine or off-the-shelf server fits — pick that, it's faster to ship |
 | Multi-step pipeline with **heterogeneous hardware / per-step scaling** (RAG, ASR→LLM→TTS, fan-out, chunking) | Chains | `truss-chains.md` | one-stage or homogeneous — a single Truss is simpler |
 
@@ -83,8 +86,8 @@ Orthogonal operational surfaces (independent of which flavor above):
 - Gradual traffic shift to new deployment (pause/resume/cancel) → rolling deployments:
   `deployment/rolling-deployments.mdx`
 - Call a deployment → `inference-api.md` (custom) or `model-apis.md` (hosted)
-- High-throughput batch calls (embeddings, reranking) → Performance client (Rust, 1200+ req/s):
-  `inference/performance-client.mdx`
+- High-throughput batch calls (embeddings, reranking) → Performance client (Python / Node.js / Rust, 1200+ req/s):
+  `reference/sdk/performance-client/overview.mdx`
 - Programmatic control plane → `management-api.md`
 
 Real-world nuances the table can't capture:
@@ -93,18 +96,21 @@ Real-world nuances the table can't capture:
   while internal Chainlets use engines.
 - **Existing Truss models can join Chains.** Use `TrussChainlet` and `TrussHandle` for HTTP or WebSocket calls; read
   <https://docs.baseten.co/development/chain/truss-chainlets> before wiring this integration.
-- **Engine performance vs flexibility.** TRT-LLM is the fastest path for many LLMs but its config surface is opaque.
-  Worth the trade only when latency/throughput is a real constraint.
+- **Engine performance vs flexibility.** Engine-Builder-LLM is the fastest path for dense LLMs, but its config surface
+  is opaque. Worth the trade only when latency/throughput is a real constraint.
 
 ## Routing
 
 **Skill References** (`ls references/` in skill dir, complementary to hosted docs). Be generous to read any of the
 included reference files as soon as the user touches on that topic.
 
+- `references/sandboxes.md`: create and operate Baseten Sandboxes, connect SDKs or runtime MCP tools, preview
+  applications, and preserve files across sandboxes.
 - `references/baseten-cli.md`: **deploy and operate** — `baseten model push` / `--watch`, workspace operations, hosted
   inference, and machine-readable output. Most-used.
-- `references/loops.md`: Loops sessions, runs, checkpoints, MCP tools, REST requests, and unattended client execution.
-  Read this for Loops operations or checkpoint deployment, including permissions and uncertain deployment results.
+- `references/loops.md`: Loops sessions, runs, checkpoints, capacity refusals, MCP tools, REST requests, and unattended
+  client execution. Read this for Loops operations or checkpoint deployment, including serverless versus dedicated
+  placement and uncertain deployment results.
 - `references/truss-cli.md`: Chains authoring and legacy `truss` commands. Deep dive: `references/truss-config.md`.
 - `references/truss-model-py.md`: Python-class flavor (custom pre/post, non-engine architectures).
 - `references/truss-custom-servers.md`: `docker_server` flavor (vLLM / TGI / SGLang / Triton; most common modern-LLM
@@ -156,13 +162,19 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 
 ### Non-obvious placements within `references/`
 
-- Engine-only deploys (TensorRT-LLM, BEI, BIS-LLM) → `truss-config.md` engines section (also owns `model_cache`,
-  secrets, resources, and BDN `weights`).
+- Engine-only deploys (BEI / BEI-Bert / Engine-Builder-LLM / BIS-LLM) → `truss-config.md` engines section (also owns
+  `model_cache`, secrets, resources, and BDN `weights`).
 - Authoring-flavor decision: single deployment → top of `truss-config.md`; multiple coordinated → `truss-chains.md`.
 - Loops operations: start with `references/loops.md`, then consult its linked SDK and API documentation.
+- Persistent weights and data mounted into deployments: BDN volumes (`baseten volume push` / `baseten volume sync`,
+  `bdn:` URIs, read-only mounts) rather than baked images; see `truss-config.md` and
+  <https://docs.baseten.co/development/volumes/overview>.
 - Training Jobs and Frontier Gateway: use current documentation. Use `baseten` MCP + `baseten_docs` MCP. For training
-  path choice see `training/index.mdx`; for Loops (managed SFT/RL SDK) see `loops/overview.mdx`; for SSH / VS Code
-  tunnels into training containers see `training/ssh.mdx` and `training/remote-access.mdx`.
+  path choice see `training/index.mdx`; for Loops see `loops/quickstart.mdx` for the serverless first run,
+  `loops/availability-modes/overview.mdx` for serverless and dedicated billing and placement, and
+  `troubleshooting/loops.mdx` for `429` capacity and `org_cap` refusals; for a working recipe see the Loops cookbook at
+  `github.com/basetenlabs/loops-cookbook`; for SSH / VS Code tunnels into training containers see `training/ssh.mdx` and
+  `training/remote-access.mdx`.
 
 ### Tool quirks
 
@@ -171,10 +183,11 @@ perfect/authoritative. For any non-trivial claim ("supported", perf numbers, rec
 - Full doc pages: `cat`/`head` on `.mdx` paths via `query_docs_filesystem_baseten`. Alternatively,
   `docs.baseten.co/<path>.md` also works and is faster for single-page reads.
 - Inference SSH (terminal in running container, requires org enablement) → `model-dev-loop.md` § Inference SSH.
-- `list_library_models` is **baseten curated catalog** (~tens of pre-optimized hosted models, mostly popular open-source
-  LLMs / embeddings). Models are good starter models to play, but not for custom authoring, specific performance needs,
-  finetuning and private HF models etc. No useful tags (modality etc.) — filter by `display_name` / `hf_repo_id`
-  substring.
+- `list_library_models` is the **Baseten curated catalog** (~tens of one-click models): language models for chat,
+  reasoning, and vision, plus decision models for classification and scoring, with audio input and web search on some
+  models. Good starting points, not a fit for custom authoring, specific performance needs, fine-tuning, or private
+  Hugging Face models. Tags are sparse; filter by `display_name` / `hf_repo_id` substring and confirm feature support
+  and pricing on the Model APIs page.
 - Blog content is not in the docs MCP. Fetch `baseten.co/llms.txt` and search for relevant posts.
 
 ### MCP introspection vs. invocation
