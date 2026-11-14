@@ -9,11 +9,11 @@ jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: chainguard-actions/actions-checkout@59b7218bfc2eaabc464f1254f6e1dac5bda91d94 # v4.4.0
+      - uses: chainguard-actions/actions-setup-python@ace3254bb5011efbd0650a7120a0441ebd1f9400 # v5.6.0
         with:
           python-version: '3.13'
-      - uses: actions/setup-node@v4
+      - uses: chainguard-actions/actions-setup-node@031fc9bd73e651da81e6a7294b2af29e64d5f39c # v4.4.0
         with:
           node-version: '24'
-      - uses: pre-commit/action@v3.0.1
+      - uses: chainguard-actions/pre-commit-action@32715888ca251f994e80434f0801c2b054458067 # v3.0.1
