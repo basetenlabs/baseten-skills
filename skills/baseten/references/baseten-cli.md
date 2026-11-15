@@ -139,7 +139,7 @@ spec is at <https://api.baseten.co/v1/spec>.
 baseten org describe                                          # organization details
 baseten org regions                                           # region slugs for --region
 baseten org api-key list
-baseten org api-key create --type workspace-invoke --name ci
+baseten org api-key create --type workspace-invoke --name ci --team "<team>" --model-id "<model-id>" --expires-at "<expires-at>"
 baseten org secret set --name hf_access_token                 # value comes from stdin or a prompt
 baseten org billing usage --since 7d
 baseten org team list                                         # also: org user list
