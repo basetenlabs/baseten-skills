@@ -1,7 +1,7 @@
 # Baseten security practices
 
-How to handle Baseten credentials, secrets, access, and production changes when you act for a user. The rules in
-`SKILL.md` § Security rules always apply; this file has the procedures behind them. Authoritative docs:
+How to handle Baseten credentials, secrets, access, and production changes when you act for a user. The practices in
+`SKILL.md` § Security practices apply throughout; this file has the procedures and examples. Authoritative docs:
 <https://docs.baseten.co/organization/api-keys>, <https://docs.baseten.co/organization/secrets>, and
 <https://docs.baseten.co/observability/security>. For compliance programs, policies, and data handling commitments, send
 the user to <https://docs.baseten.co/observability/security> and the [Baseten Trust Center](https://trust.baseten.co/)
@@ -25,7 +25,7 @@ the user to sign in again or provide a working key through the environment.
 
 ## Choose the narrowest key
 
-Create a key only when the user asks for one. Match the workload:
+For an authorized key-management task, match the credential to the workload:
 
 | Workload | Credential |
 | --- | --- |
@@ -47,14 +47,28 @@ Create a key only when the user asks for one. Match the workload:
   name, type, team, and expiration with `baseten org api-key list` (metadata only, never values). Check model lists,
   environment restrictions, and Model APIs access in the dashboard.
 
+For a requested GitHub Actions inference credential, capture the key and send it to the repository's encrypted secret
+store. Replace the placeholders with the team, model, expiration, and repository the user selected. Run with shell
+tracing disabled. The subshell keeps the value out of captured tool output and discards the shell variable on exit. For
+another secret store, use its stdin-based write command.
+
 ```sh
-baseten org api-key create \
-  --type workspace-invoke \
-  --name production-inference \
-  --team "<team>" \
-  --model-id "<model-id>" \
-  --expires-at "<expires-at>"
+(
+  set -e
+  set +x
+  api_key="$(baseten org api-key create \
+    --type workspace-invoke \
+    --name production-inference \
+    --team "<team>" \
+    --model-id "<model-id>" \
+    --expires-at "<expires-at>" \
+    --output text)"
+  printf '%s' "$api_key" | gh secret set BASETEN_API_KEY --repo "<owner/repo>"
+)
 ```
+
+Confirm storage succeeded, then report only the key metadata. If storage fails after creation, identify the new key by
+name or prefix and complete secure storage or ask the user how to handle it before creating another key.
 
 ## Keep credentials out of code, logs, and prompts
 
@@ -70,9 +84,14 @@ baseten org api-key create \
 
 ## Respond to an exposed key
 
-A key that appears in a commit, file, log, or transcript is exposed. Don't use it, copy it, or quote it. Tell the user
-where it appeared, identified by location and prefix, and that the docs direct them to revoke it immediately and create
-a replacement. Revocation is permanent and stops every workload that uses the key, so the user decides when it happens.
+Use credentials from the intended private store, such as a CLI profile, a gitignored local environment file, or a
+runtime secret mount. Their presence in that store alone is not evidence of exposure. Truss login credentials in
+`~/.trussrc` are separate from the runtime secret names in a model's `config.yaml`.
+
+For accidental disclosure in tracked source, application logs, or a shared transcript, identify the location and key
+prefix without repeating or using the value. Recommend prompt revocation and replacement, and removal or redaction at
+the disclosure source. Coordinate the response with the user: revocation permanently retires the key and can interrupt
+workloads using it. Perform key-management actions within the user's authorization.
 
 To replace a key that a workload still needs (rotation):
 
@@ -123,10 +142,11 @@ Prefer workload identity to long-lived cloud keys stored as secrets.
 
 ## Respect access controls
 
-- Roles: Admin, Member, and Viewer. Viewers have read-only access and can call models. Role, membership, SSO, and SCIM
-  settings belong to the user's admins; leave them unchanged.
-- Restricted environments: only designated users can modify deployments, autoscaling, or promotions in them. A `403` on
-  such an operation means the credential's user lacks access. Report it; don't retry with another credential.
+- Roles: Admin, Member, and Viewer. Viewers have read-only access and can call models. Coordinate requested role,
+  membership, SSO, and SCIM changes with the user's authorized admins.
+- Restricted environments let designated users manage deployments, autoscaling, and promotions. For a `403` on a
+  management operation, verify the target environment and the intended identity's access, then explain the permission
+  needed. Use another identity only when the user authorizes it.
 - Regional environments: when an environment requires its regional endpoint
   (`https://model-{model_id}-{env_name}.api.baseten.co/predict`), its standard endpoint returns `403`. Update the caller
   to the regional endpoint.
@@ -162,11 +182,14 @@ runtime:
 ```
 
 - Allow exact hostnames, such as each Baseten model's hostname, rather than wildcards like `*.api.baseten.co`.
-- Restrictions apply to runtime downloads too. Load weights through BDN or the model cache instead of allowing broad
-  download hosts.
+- Include required runtime-download hosts in the deployment's allow lists, or prepare weights through BDN or the model
+  cache. Review BDN proxy access separately: proxy-routed requests use the destinations served by the proxy rather than
+  the deployment's IP and FQDN allow lists. See
+  [egress restrictions](https://docs.baseten.co/development/model/egress-restrictions).
 - Allow lists can't change in place; deploy a new version. After deploying, test every outbound call the model needs.
-- Restrictions apply to model deployments only, not Chains or training jobs. `fqdn_allow_list` is enforced by IP, so
-  allowing one host on shared infrastructure, such as one S3 bucket, permits others served from the same IPs.
+- Configure these restrictions on model deployments. For a Chain workload that needs this control, deploy the relevant
+  chainlet as a standalone model. FQDN rules filter by resolved IP; pair them with resource-level authorization for
+  shared services such as S3.
 
 ## Verify async webhook signatures
 
@@ -199,4 +222,5 @@ Code: <https://docs.baseten.co/inference/async#secure-webhooks>.
 
 Federated API keys are shown once at mint time. To rotate a customer's key, mint a new key in the same group, hand it
 over, and revoke the old key after cutover. Revocation is irreversible, and deleting a group revokes every key in it and
-in its descendant groups. Confirm with the user before either.
+in its descendant groups. Confirm the affected group or key and workload impact when the user's existing instructions do
+not already authorize that action.

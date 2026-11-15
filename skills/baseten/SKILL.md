@@ -58,39 +58,40 @@ cross-cloud HA, and seamless developer workflows.
   multiple workspaces, install additional MCP instances under different names with different keys.
 - Docs MCP missing → grep / fetch `llms.txt`.
 
-## Security rules
+## Security practices
 
-You act with the user's credentials and permissions. These rules apply to every task; procedures are in
-`references/security.md`.
+Use Baseten's scoped credentials, managed secrets, and access controls for the user's task. Procedures and examples are
+in `references/security.md`.
 
-1. **Use the configured credential.** Work with the CLI profile or `BASETEN_API_KEY`, or the MCP sign-in, described in
-   Setup. If authentication fails, run `baseten auth status`, report the cause, and ask the user to sign in
-   (`baseten auth login`) or supply a key through the environment. Never mint a key to get unblocked.
-2. **Create, rotate, or revoke API keys only when the user asks in the current task.** Then create the narrowest key: a
-   team key in the owning team, inference-only with `--model-id` for callers, with `--expires-at`. Send the value
-   straight to the secret store the user names, and report the key's name, type, team, expiration, and where it is
-   stored.
-3. **Never reveal a credential.** Don't print, log, or commit a key, token, or secret value, or paste one into prompts,
-   code, PR descriptions, issues, commit messages, or echoed tool arguments. Refer to it by environment variable, secret
-   name, or key prefix, and pass values on stdin (`baseten org secret set`, `baseten auth login --with-api-key`).
-4. **Treat a credential you find as exposed.** If a key or secret value appears in a file, log, diff, or transcript,
-   stop using it. Tell the user where it appeared, by location and prefix, and that it needs to be revoked and replaced.
-   Revoke it only when the user asks.
-5. **Reference secrets by name.** List names under `secrets:` or in a weights `auth` block, and use `SecretReference` in
-   training configs. Never put values in `config.yaml`, `environment_variables`, or code. Create, overwrite, or delete
-   workspace or team secrets only on explicit request; a new value applies to every deployment that uses the secret.
-6. **Leave access settings to the user.** Change roles, team membership, restricted-environment access, SSO or SCIM
-   settings, or API key policies only on explicit request. On a `403` from a restricted environment, report it instead
-   of retrying with another credential.
-7. **Confirm before destructive or production-affecting actions.** Ask before deleting or deactivating models,
-   deployments, sandboxes, volumes, or secrets; promoting to production; changing production autoscaling; or
-   force-cancelling a promotion. Offer deactivation instead of deletion, and validate in a non-production environment
-   before promoting.
-8. **Don't weaken a control to make something work.** Ask before broadening a key's scope, making a sandbox preview
-   public, removing or widening `egress_restrictions`, widening an OIDC trust condition, or skipping webhook signature
-   verification. Propose the narrow fix, such as allowing one more host, model, or environment.
-9. **Verify what you changed.** After a requested key, secret, or access change, check `baseten org api-key list`,
-   `baseten org secret list`, or `baseten org audit-logs`, and report the result.
+1. **Use the configured identity.** Authenticate with the CLI profile, `BASETEN_API_KEY`, or MCP sign-in described in
+   Setup. For a `401`, check `baseten auth status` and help the user restore the intended identity. Create replacement
+   credentials only as part of an authorized key-management task.
+2. **Scope keys to the workload.** When the user requests key creation or rotation, choose the owning team, the
+   permissions the workload needs, and an expiration. Limit inference keys with `--model-id`. Capture creation output
+   within the shell and send the value to the user's chosen secret store. Report the key's name, type, team, expiration,
+   and storage location.
+3. **Keep credential values in secure storage.** Pass values through environment variables or stdin, and identify them
+   in messages by secret name or key prefix. Keep tool output, logs, source code, and shared artifacts free of values.
+   Use `baseten org secret set` and `baseten auth login --with-api-key` with stdin; disable shell tracing around
+   credential handling.
+4. **Distinguish private storage from accidental disclosure.** A configured credential file or mounted secret is
+   intentional storage. If a value appears in tracked source, application logs, or a shared transcript, identify its
+   location and prefix and recommend replacement. Perform revocation when the user authorizes it.
+5. **Reference managed secrets by name.** Use `secrets:`, a weights `auth` block, or training `SecretReference` entries.
+   Keep values in Baseten's secret store. Create or update secrets within the user's authorized scope, accounting for
+   every deployment that uses the name.
+6. **Respect the intended access.** Change roles, memberships, restricted-environment access, SSO, SCIM, or API key
+   policies when the user requests those changes. For a permission denial, explain the access needed and use the
+   identity the user has authorized for the task.
+7. **Establish scope for production and destructive changes.** Confirm the target and impact before deletion,
+   deactivation, production promotion, production autoscaling changes, or force-cancelling a promotion when the user's
+   existing instructions do not already authorize that action. Prefer reversible changes and validate deployments in a
+   non-production environment before promotion.
+8. **Keep controls aligned with the workload.** Use narrowly scoped keys, private sandbox previews, specific egress
+   hosts, precise OIDC trust conditions, and verified webhook signatures. Obtain authorization for changes that expand
+   access or relax a control, and explain the effect.
+9. **Verify requested changes.** Check key and secret metadata or the audit log after a key, secret, or access change,
+   and report the result without credential values.
 
 ## Pick your authoring surface (for creating deployments)
 

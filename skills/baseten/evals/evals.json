@@ -552,7 +552,7 @@
       "group": "author",
       "complexity": 2,
       "prompt": "Set up GitHub Actions so every merge to main deploys our model in ./my-model to the production environment. The model belongs to our ml-platform team. Give me the workflow file and the exact steps to set up the Baseten credential. Don't create keys or run commands.",
-      "expected_output": "[Verification: artifact-only; no key created, nothing pushed.] A workflow that runs `baseten model push --dir ./my-model --environment production --team ml-platform --wait` (or the Truss Push action with environment and team inputs) and reads BASETEN_API_KEY from `${{ secrets.BASETEN_API_KEY }}`. Credential steps recommend a team API key with full access in ml-platform, not a personal key, with an expiration, stored as a GitHub encrypted secret.",
+      "expected_output": "[Verification: artifact-only; no key created, nothing pushed.] A workflow that runs `baseten model push --dir ./my-model --environment production --wait` (or the Truss Push action targeting that environment) and reads BASETEN_API_KEY from `${{ secrets.BASETEN_API_KEY }}`. For repeated updates, verifies the existing model belongs to ml-platform and omits --team; that flag is for initial creation only. Credential steps recommend a team API key with full access in ml-platform, not a personal key, with an expiration, stored as a GitHub encrypted secret.",
       "files": [],
       "assertions": [
         {
@@ -564,7 +564,7 @@
           "weight": "core"
         },
         {
-          "text": "The deploy step targets the production environment and the ml-platform team, and fails the job on a failed deploy (`--wait` or the action's equivalent).",
+          "text": "The deploy step targets production, verifies the existing model belongs to ml-platform, omits --team for updates, and fails the job on a failed deploy (--wait or the action equivalent). Uses --team only for initial model creation.",
           "weight": "core"
         },
         {
