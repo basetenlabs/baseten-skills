@@ -78,7 +78,8 @@ name or prefix and complete secure storage or ask the user how to handle it befo
   `baseten auth login --with-api-key --profile <profile>` read stdin. `--value` leaks into shell history and `ps`
   output.
 - Keep the API key and sandbox access tokens out of agent prompts, application logs, and code you submit to a sandbox.
-  Don't put the Baseten API key in a sandbox's environment variables.
+  Don't put the Baseten API key in a sandbox's environment variables, and pass a sandbox only the credentials its code
+  needs.
 - Keys created on or after 15:30 UTC on November 9, 2026, start with `b10_`. Secret scanners can match
   `b10_[A-Za-z0-9]{8}\.[A-Za-z0-9]{32}`; older keys lack the prefix and don't match.
 
