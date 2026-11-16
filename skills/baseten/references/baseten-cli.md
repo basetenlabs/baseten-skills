@@ -67,7 +67,8 @@ Flags worth knowing:
 - `--preserve-env-instance-type`: keep the target environment's instance type instead of `config.yaml`'s.
 - `--deploy-timeout 30m`: raise the build timeout (range 10m to 24h).
 - `--labels '{"team":"ml"}'`: attach searchable key/value labels.
-- `--team <name>`: target team, only valid when creating a new model. Always pass it from automation.
+- `--team <name>`: target team when creating a new model, including from automation. For updates, verify the existing
+  model belongs to the intended team and omit this flag.
 - `--wait` exits non-zero on a terminal failure, so a CI step fails with the deploy.
 
 ## Live iteration
@@ -139,12 +140,15 @@ spec is at <https://api.baseten.co/v1/spec>.
 baseten org describe                                          # organization details
 baseten org regions                                           # region slugs for --region
 baseten org api-key list
-baseten org api-key create --type workspace-invoke --name ci
 baseten org secret set --name hf_access_token                 # value comes from stdin or a prompt
 baseten org billing usage --since 7d
 baseten org team list                                         # also: org user list
 baseten org audit-logs --since 7d --event-type-group deployed
 ```
+
+For requested key creation, follow [the secure-storage example](security.md#choose-the-narrowest-key) so the one-time
+value goes directly to the user's chosen secret store. `org api-key create --output text` writes the raw value to
+stdout; capture it within the shell before passing it to the store's stdin.
 
 `org secret` stores the secrets `config.yaml` references, so it is usually the step before a first deploy. Avoid
 `org secret set --value`, which leaks into shell history; pass the value on stdin instead. `org audit-logs` records

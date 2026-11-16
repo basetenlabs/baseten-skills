@@ -58,6 +58,41 @@ cross-cloud HA, and seamless developer workflows.
   multiple workspaces, install additional MCP instances under different names with different keys.
 - Docs MCP missing → grep / fetch `llms.txt`.
 
+## Security practices
+
+Use Baseten's scoped credentials, managed secrets, and access controls for the user's task. Procedures and examples are
+in `references/security.md`.
+
+1. **Use the configured identity.** Authenticate with the CLI profile, `BASETEN_API_KEY`, or MCP sign-in described in
+   Setup. For a `401`, check `baseten auth status` and help the user restore the intended identity. Create replacement
+   credentials only as part of an authorized key-management task.
+2. **Scope keys to the workload.** When the user requests key creation or rotation, choose the owning team, the
+   permissions the workload needs, and an expiration. Limit inference keys with `--model-id`. Capture creation output
+   within the shell and send the value to the user's chosen secret store. Report the key's name, type, team, expiration,
+   and storage location.
+3. **Keep credential values in secure storage.** Pass values through environment variables or stdin, and identify them
+   in messages by secret name or key prefix. Keep tool output, logs, source code, and shared artifacts free of values.
+   Use `baseten org secret set` and `baseten auth login --with-api-key` with stdin; disable shell tracing around
+   credential handling.
+4. **Distinguish private storage from accidental disclosure.** A configured credential file or mounted secret is
+   intentional storage. If a value appears in tracked source, application logs, or a shared transcript, identify its
+   location and prefix and recommend replacement. Perform revocation when the user authorizes it.
+5. **Reference managed secrets by name.** Use `secrets:`, a weights `auth` block, or training `SecretReference` entries.
+   Keep values in Baseten's secret store. Create or update secrets within the user's authorized scope, accounting for
+   every deployment that uses the name.
+6. **Respect the intended access.** Change roles, memberships, restricted-environment access, SSO, SCIM, or API key
+   policies when the user requests those changes. For a permission denial, explain the access needed and use the
+   identity the user has authorized for the task.
+7. **Establish scope for production and destructive changes.** Confirm the target and impact before deletion,
+   deactivation, production promotion, production autoscaling changes, or force-cancelling a promotion when the user's
+   existing instructions do not already authorize that action. Prefer reversible changes and validate deployments in a
+   non-production environment before promotion.
+8. **Keep controls aligned with the workload.** Use narrowly scoped keys, private sandbox previews, specific egress
+   hosts, precise OIDC trust conditions, and verified webhook signatures. Obtain authorization for changes that expand
+   access or relax a control, and explain the effect.
+9. **Verify requested changes.** Check key and secret metadata or the audit log after a key, secret, or access change,
+   and report the result without credential values.
+
 ## Pick your authoring surface (for creating deployments)
 
 First-pass decision. Many real workloads blend rows — treat this as a starting point, not a rule. When unsure, sketch
@@ -122,6 +157,9 @@ included reference files as soon as the user touches on that topic.
   async / streaming / wake / OpenAI-compat sync routes.
 - `references/management-api.md`: programmatic control plane (models, deployments, envs, secrets). What the `baseten`
   and `truss` CLIs use under the hood.
+- `references/security.md`: choosing and rotating API keys, responding to an exposed key, secrets in configs, OIDC and
+  AWS AssumeRole, restricted environments, audit logs, egress restrictions, webhook signatures, and sandbox tokens and
+  previews. Read it before creating credentials, CI setups, or production changes.
 - `references/deployment-lifecycle.md`: Model / Deployment / Environment semantics + promotion + autoscaling.
 - `references/model-dev-loop.md`: post-first-deploy iteration. rebuild / patch / hot-reload cost tiers, agent-vs-human
   watch loop.
